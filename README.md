@@ -43,15 +43,15 @@ $ mongo
 ````
 
 **Basic querying**
-```
+````
 db.Test.drop()
 db.Book.find().limit(1).pretty()
 db.Book.find({"Title":'From the Corner of His Eye'}).count()
 db.Book.find({"Title":'From the Corner of His Eye'},{Title:1, ISBN:1}).pretty()
 db.Book.find({"Title":'From the Corner of His Eye'},{Title:1, ISBN:1, _id:0}).pretty()
 db.Book.find({"Title":'From the Corner of His Eye', ISBN: '0553801341'},{Title:1, ISBN:1, _id:0}).pretty()
-db.Book.find({"Ratings.UserId":ObjectId("525867753a93bb2198148dc0")},{Title:1,_id:0})
-```
+db.Book.find({"Ratings.UserId":ObjectId("525867753a93bb2198148dc0")},{Title:1,_id:0})`
+````
 
 Queries are done via find. Pass prototypical JSON documents
 
