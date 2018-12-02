@@ -256,3 +256,47 @@ We want $elemMatch
     "Published" : ISODate("1996-01-01T08:00:00.000Z")
 }
 ```
+
+**Inserts**
+
+If we don't specify key: _id, MongoDB will generate it.
+```
+> db.Book.insert({Title: 'From the Corner of My Eye', ...'})
+
+> db.Book.find()...
+
+{
+    "_id" : ObjectId("5c0437172d5576eb08ded262"),
+    "Title" : "From the Corner of My Eye",
+    "ISBN" : "0440234743",
+    "Author" : "Steve Jobs"
+    //...
+}
+```
+
+**Whole document Update**
+
+```
+> db.Book.update(
+        {_id : ObjectId("5c0437172d5576eb08ded262") },                                            # First argument (required) is the WHERE clause
+        {Title: 'From the Corner of My Eye 2nd Edition', ISBN: '0000000000',Author: 'Mr.NoName'}, # Next argument (required) is the new document
+        {upsert: true, multi: true} )                                                             # Additional options may not be specified
+
+> db.Book.find()...
+
+{
+    "_id" : ObjectId("5c0437172d5576eb08ded262"),
+    "Title" : "From the Corner of My Eye 2nd Edition",
+    "ISBN" : "0000000000",
+    "Author" : "Mr.NoName"
+}
+
+```
+
+**Deleting documents**
+
+```
+> db.Book.deleteOne( {"_id" : ObjectId("5c0437172d5576eb08ded262")} )
+
+> db.Book.deleteMany( {"Title" : "Some title"} )
+```
