@@ -154,6 +154,8 @@ $not	Inverts the effect of a query expression and returns documents that do not 
 $nor	Joins query clauses with a logical NOR returns all documents that fail to match both clauses.
 $or	Joins query clauses with a logical OR returns all documents that match the conditions of either clause.
 ```
+https://docs.mongodb.com/manual/reference/operator/query/
+
 
 **Projections**
 
@@ -300,3 +302,100 @@ If we don't specify key: _id, MongoDB will generate it.
 
 > db.Book.deleteMany( {"Title" : "Some title"} )
 ```
+
+**Atomic updates**
+
+
+
+```
+> var book = db.getCollection('BookReads').findOne({'ISBN':'94724773501'})
+> book.ReadCount += 1
+> db.getCollection('BookReads').update({'_id':book._id},book)
+> db.getCollection('BookReads').find({'ISBN':'94724773501'})
+
+
+{
+    "_id" : ObjectId("5c0506042d5576eb08ded263"),
+    "ISBN" : "94724773501",
+    "ReadCount" : 1.0
+}
+```
+
+Better way for update is to use operators.
+
+```
+> db.getCollection('BookReads').find({'ISBN':'94724773501'})
+> db.getCollection('BookReads').update({'_id':book._id},{$inc: {ReadCount: 1}})
+> db.getCollection('BookReads').find({'ISBN':'94724773501'})
+
+
+{
+    "_id" : ObjectId("5c0506042d5576eb08ded263"),
+    "ISBN" : "94724773501",
+    "ReadCount" : 2.0
+}
+
+```
+
+
+Field
+```
+Name	        Description
+$currentDate	Sets the value of a field to current date, either as a Date or a Timestamp.
+$inc	        Increments the value of the field by the specified amount.
+$min	        Only updates the field if the specified value is less than the existing field value.
+$max	        Only updates the field if the specified value is greater than the existing field value.
+$mul	        Multiplies the value of the field by the specified amount.
+$rename	        Renames a field.
+$set	        Sets the value of a field in a document.
+$setOnInsert	Sets the value of a field if an update results in an insert of a document. Has no effect on update operations that modify existing documents.
+$unset	        Removes the specified field from a document.
+```
+
+
+Array
+
+```
+Operators
+
+Name	        Description
+$	        Acts as a placeholder to update the first element that matches the query condition.
+$[]	        Acts as a placeholder to update all elements in an array for the documents that match the query condition.
+$[<identifier>]	Acts as a placeholder to update all elements that match the arrayFilters condition for the documents that match the query condition.
+$addToSet	Adds elements to an array only if they do not already exist in the set.
+$pop	        Removes the first or last item of an array.
+$pull	        Removes all array elements that match a specified query.
+$push	        Adds an item to an array.
+$pullAll        Removes all matching values from an array.
+```
+
+https://docs.mongodb.com/manual/reference/operator/update/
+```
+> db.Test.insert( { Title: 'A popular book', ViewCount: 0} )
+> db.Test.find()
+
+{
+    "_id" : ObjectId("5c050ca62d5576eb08ded264"),
+    "Title" : "A popular book",
+    "ViewCount" : 0.0
+}
+
+> db.Test.update( {_id:ObjectId("5c050ca62d5576eb08ded264")}, {$inc: {ViewCount: 1}})
+> db.Test.update( {_id:ObjectId("5c050ca62d5576eb08ded264")}, {$inc: {ViewCount: 1}})
+> db.Test.update( {_id:ObjectId("5c050ca62d5576eb08ded264")}, {$inc: {ViewCount: 1}})
+
+{
+    "_id" : ObjectId("5c050ca62d5576eb08ded264"),
+    "Title" : "A popular book",
+    "ViewCount" : 3.0
+}
+
+```
+
+
+
+
+
+
+
+
