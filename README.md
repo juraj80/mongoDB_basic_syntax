@@ -392,6 +392,45 @@ https://docs.mongodb.com/manual/reference/operator/update/
 
 ```
 
+**Introduction to PyMongo**
+
+_pymongo_ is the core package to access MongoDB
+
+Features include
+- Connect to database, replicate set, or shard
+- Query and generally perform CRUD
+- Other admin operations
+- Connection pooling
+
+https://github.com/mongodb/mongo-python-driver
+
+Some CRUD operations
+
+```
+import pymongo
+
+conn_str = 'mongodb://localhost:27017'
+client = pymongo.MongoClient(conn_str)
+
+db = client.the_small_bookstore
+
+# now we can operate on the db via collections
+print('There are {} books'.format(db.books.count() ))
+print('First book: {}'.format(db.books.find_one() ))
+print('Book by ISBN: {}'.format(db.books.find_one({'ISBN': '0399135782'}) ))
+
+res = db.books.insert_one({'title': 'New book','ISBN': '1234567890'})
+
+{
+    "_id" : ObjectId("5c0518e2bd09bd34373e8528"),
+    "title" : "New book",
+    "ISBN" : "1234567890"
+}
+ 
+```
+
+
+
 
 
 
