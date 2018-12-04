@@ -518,6 +518,6 @@ _Note: If we want to write an app, PyMongo could be our data access layer, the l
 ![alt text](pic28.png)
 
 
-![alt text](/Users/jurajklucka/PycharmProjects/mongoDB_basic_syntax/pic29.png)
+![alt text](pic29.png)
 
 https://github.com/juraj80/mongoDB_basic_syntax/raw/master/pic28.png
