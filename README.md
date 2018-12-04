@@ -520,4 +520,37 @@ _Note: If we want to write an app, PyMongo could be our data access layer, the l
 
 ![alt text](pic29.png)
 
-https://github.com/juraj80/mongoDB_basic_syntax/raw/master/pic28.png
+**To embed or not to embed (normalized) data?**
+
+1. is the embedded data wanted **80% of the time**?
+2. How often do you want the embedded
+   data **without the containing document**? (if often -> normalize)
+3. Is the embedded data **a bounded set**? 
+4. Is that bound **small**?
+5. **How varied** are your queries? (if much -> normalize)
+6. Is this an **integration DB** or an **application DB**? 
+
+
+Do we have an integration database?
+![alt text](pic30.png)
+Especially in large enterprises, we'll see that they use databases almost as a means of inter-application communication,
+so maybe we have this huge relational database that lives in the center with many, many constraints, many store procedures, 
+lots and lots of structures and rules. Because we have a bunch of different applications and they all need to access this data,
+This is a decent, a good role for relational databases, but relational databases are a good guarding against this kind of use case,
+they have a fixed schema, they have lots of constraints and relationships and they are very good at enforcing and kicking it back to the app
+and go no, you got it wrong, you messed up the data.
+So they can be like this strong rock in the middle.
+The problem with rocks is they're not very adaptable, they can't be massaged into new and interesting things; a rock is a rock, and it's extremely hard to change.
+It's also not a great use case for document databases with their flexibility in schema design, their less enforcement at the database level and more enforcement inside the app.
+
+This is an integration database, and it's generally not a good use case for document databases, if we're still using that this sort of style of document databases, 
+it means our queries will be more varied and we probably need to model in a more relational style,less embedded style, just as a rule of thumb.
+
+
+![alt text](pic31.png)
+
+Each one of these little apps is much simpler, it can have its own DB with its own focused query patterns.
+When we have an application DB like this, we are more likely to have slightly
+more embedded objects because the query patterns are going to be simpler and more focused and more constraints.
+
+
