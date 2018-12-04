@@ -507,3 +507,15 @@ print(book)
 
 {'_id': ObjectId('5c0518e3bd09bd34373e8529'), 'title': 'The second book', 'isbn': '73738947385', 'favorited_by': [101]}
 ```
+
+Mapping from MongoDB api to PyMongo documentation
+
+http://api.mongodb.com/python/current/api/pymongo/collection.html
+
+_Note: If we want to write an app, PyMongo could be our data access layer, the low level way to talk to MongoDB._
+
+# Modeling and document design
+![alt text](/Users/jurajklucka/PycharmProjects/mongoDB_basic_syntax/pic28.png)
+
+
+![alt text](/Users/jurajklucka/PycharmProjects/mongoDB_basic_syntax/pic29.png)
