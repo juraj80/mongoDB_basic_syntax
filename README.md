@@ -392,7 +392,7 @@ https://docs.mongodb.com/manual/reference/operator/update/
 
 ```
 
-**Introduction to PyMongo**
+#Introduction to PyMongo
 
 _pymongo_ is the core package to access MongoDB
 
@@ -429,12 +429,81 @@ res = db.books.insert_one({'title': 'New book','ISBN': '1234567890'})
  
 ```
 
+**Connection string examples**
+
+Connect to the server mongo_server on default port within a virtual private network or in the same data center zone or cloud hosting like a Digital Ocean
+
+`conn_str = 'mongodb://mongo_server'
+`
+
+Connect to mongo_server on an alternate port
+
+`conn_str = 'mongodb://mongo_server:2000' 
+`
+
+Use authentication when connecting
+
+`conn_str = 'mongodb://jeff:supersecure@mongo_server:2000' 
+`
+
+Connect to a replicate set
+
+`conn_str = 'mongodb://mongo_server:2000, mongo_server:2001, mongo_server2:2002/?replicaSet=prod' 
+`
+
+**Atomic updates from Python (using the in_place operators)**
+```
+import pymongo
+conn_str = 'mongodb://localhost:27017'
+client = pymongo.MongoClient(conn_str)
+db = client.the_small_bookstore
+
+res = db.books.insert_one({'title': "New Book", 'isbn': "1234567890"})
+db.books.update({'isbn': "1234567890"}, {'$addToSet': {'favorited_by': 1001}})
+db.books.update({'isbn': "1234567890"}, {'$addToSet': {'favorited_by': 1002}})
+db.books.update({'isbn': "1234567890"}, {'$addToSet': {'favorited_by': 1002}})
+
+{'_id': ObjectId('5c0646b4bd09bd3d6f1a371b'), 'title': 'New Book', 'isbn': '1234567890', 'favorited_by': [1001, 1002]}
+
+```
+
+**EXAMPLE: Atomic vs Whole document update from Python**
+
+```
+import pymongo
+
+conn_str = 'mongodb://localhost:27017'
+client = pymongo.MongoClient(conn_str)
+
+db = client.the_small_bookstore
+
+if db.books.count() == 0:
+    print("Inserting data")
+    # insert some data...
+    r = db.books.insert_one({'title': 'The first book', 'isbn': '73738947384'})
+    print(r, type(r))
+    r = db.books.insert_one({'title': 'The second book', 'isbn': '73738947385'})
+    print(r.inserted_id)
+else:
+    print("Books already inserted, skipping")
 
 
+ ''' To pull whole document back and update'''
+
+# book = db.books.find_one({'isbn': '73738947384'})
+# # print(type(book),book)
+# # book['favorited_by'] = []
+# book['favorited_by'].append(42)
+# db.books.update({'_id':book.get('_id')},book)
+# book = db.books.find_one({'isbn': '73738947384'})
+# print(book)
+
+'''An atomic, in place update'''
+
+db.books.update({'isbn': '73738947385'}, {'$addToSet': {'favorited_by': 101} } ) # addToSet Mongo operator in Python with quotes
+book = db.books.find_one({'isbn': '73738947385'})
+print(book)
 
 
-
-
-
-
-
+{'_id': ObjectId('5c0518e3bd09bd34373e8529'), 'title': 'The second book', 'isbn': '73738947385', 'favorited_by': [101]}
+```
