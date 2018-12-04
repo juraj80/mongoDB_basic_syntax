@@ -515,7 +515,7 @@ http://api.mongodb.com/python/current/api/pymongo/collection.html
 _Note: If we want to write an app, PyMongo could be our data access layer, the low level way to talk to MongoDB._
 
 # Modeling and document design
-![alt text](/Users/jurajklucka/PycharmProjects/mongoDB_basic_syntax/pic28.png)
+![alt text](pic28.png)
 
 
 ![alt text](/Users/jurajklucka/PycharmProjects/mongoDB_basic_syntax/pic29.png)
