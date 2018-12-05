@@ -515,10 +515,10 @@ http://api.mongodb.com/python/current/api/pymongo/collection.html
 _Note: If we want to write an app, PyMongo could be our data access layer, the low level way to talk to MongoDB._
 
 # Modeling and document design
-![alt text](pic28.png)
+![alt text](src/pic28.png)
 
 
-![alt text](pic29.png)
+![alt text](src/pic29.png)
 
 **To embed or not to embed (normalized) data?**
 
@@ -532,7 +532,7 @@ _Note: If we want to write an app, PyMongo could be our data access layer, the l
 
 
 Do we have an integration database?
-![alt text](pic30.png)
+![alt text](src/pic30.png)
 Especially in large enterprises, we'll see that they use databases almost as a means of inter-application communication,
 so maybe we have this huge relational database that lives in the center with many, many constraints, many store procedures, 
 lots and lots of structures and rules. Because we have a bunch of different applications and they all need to access this data,
@@ -547,10 +547,21 @@ This is an integration database, and it's generally not a good use case for docu
 it means our queries will be more varied and we probably need to model in a more relational style,less embedded style, just as a rule of thumb.
 
 
-![alt text](pic31.png)
+![alt text](src/pic31.png)
 
 Each one of these little apps is much simpler, it can have its own DB with its own focused query patterns.
 When we have an application DB like this, we are more likely to have slightly
 more embedded objects because the query patterns are going to be simpler and more focused and more constraints.
+
+**Document patterns**
+
+MongoDB Applied Design Patterns  
+https://amzn.to/2qx47oL
+
+Episode#109: MongoDB Applied Design Patterns
+https://talkpython.fm/109
+
+
+
 
 
