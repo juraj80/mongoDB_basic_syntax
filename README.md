@@ -566,3 +566,84 @@ https://talkpython.fm/109
 
 ![alt text](src/pic32.png)
 
+Mongoengine is a Document-Object Mapper (think ORM, but for document databases) for working with MongoDB from Python.
+It uses a simple declarative API, similar to the Django ORM. 
+Documentation available at 
+http://docs.mongoengine.org - there is currently a tutorial, a user guide and API reference.
+
+Installing Mongoengine
+```
+(venv) MacBook-Pro-xxx:mongoDB_basic_syntax xxx$ pip list
+Package    Version
+---------- -------
+pip        10.0.1 
+pymongo    3.7.2  
+setuptools 39.1.0 
+You are using pip version 10.0.1, however version 18.1 is available.
+You should consider upgrading via the 'pip install --upgrade pip' command.
+(venv) MacBook-Pro-xxx:mongoDB_basic_syntax xxx$ pip install mongoengine
+Collecting mongoengine
+```
+Registering connections in mongoengine
+
+In order to use MongoEngine we need to do some configuration of MongoEngine.
+Create separate folder in your app (nosql in my case) with connection module called **mongo_setup.py**.
+In this module we need to set up the connections with aliases to the application classes. 
+
+
+```
+import mongoengine
+
+def global_init():
+    pass
+```
+
+In `global_init()` function we need to register the connection. We are not going to open the connection, it doesn't talk to the 
+database, but it basically says look if you have a class that maps to a particular type or named part of our application
+use this database connection to do the backend work.
+
+```
+import mongoengine
+
+def global_init():
+    mongoengine.register_connection(alias='core', name='demo_dealership')
+    mongoengine.register_connection(alias='analytics', name='demo_dealership_visits')
+```
+
+So in our app we can say this class belongs to the core database and this one over here belong to analytics database. 
+In production we will pass the extra information we need to use for real server on another port with authentication.
+
+In **service_app.py** file we need to `import mongo_setup` module and define `config_mongo()` method which will run
+`mongo_setup.global_init()` 
+function inside.
+
+```
+import nosql.mongo_setup as mongo_setup
+
+def main():
+    print_header()
+    config_mongo()
+    user_loop()
+
+
+def print_header():
+    print('----------------------------------------------')
+    print('|                                             |')
+    print('|           SERVICE CENTRAL v.02              |')
+    print('|               demo edition                  |')
+    print('|                                             |')
+    print('----------------------------------------------')
+    print()
+
+def config_mongo():
+    mongo_setup.global_init()
+
+
+def user_loop():
+    while True:
+        ...
+     
+```
+
+
+        
