@@ -562,6 +562,7 @@ Episode#109: MongoDB Applied Design Patterns
 https://talkpython.fm/109
 
 
+**Mapping classes to MongoDB with the ODM MongoEngine**
 
-
+![alt text](src/pic32.png)
 
