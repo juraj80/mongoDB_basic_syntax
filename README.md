@@ -741,5 +741,64 @@ class Car(mongoengine.Document):
 and delete the auto generated variables from add_car() function in main application.
 
 
+```
+def add_car():
+    model = input('What is the model?')
+    make = input('What is the make?')
+    year = int(input('Year built?'))
+    # mileage = float(input('Mileage?'))
+    # vin = input('VIN? ')
 
+    car = Car()
+    car.model = model
+    car.make = make
+    car.year = year
+    # car.mileage = mileage
+    # car.vi_number = vin
+
+    car.save()   # in order to insert it to db in active record style, where we work with a single document
+```
+
+The next thing we want to look at is the engine and the embedded elements. The engine will equal to a subclass, a class that
+represents engines. We define a class Engine in separata file, which will derive from mongoengine as a embedded subdocument.
+We will not query and save them independently, we can only work with them through their parent document. 
+
+nosql/engine.py
+```
+import uuid
+import mongoengine
+
+class Engine(mongoengine.EmbeddedDocument):
+    horsepower = mongoengine.IntField(required=True)
+    liters = mongoengine.FloatField(required=True)
+    mpg = mongoengine.FloatField(required=True)
+    serial_number = mongoengine.StringField(default=lambda: str(uuid.uuid4()))
+```
+
+nosql/car.py
+
+```
+import uuid
+import mongoengine
+
+from nosql.engine import Engine
+
+
+class Car(mongoengine.Document):
+#    id # --> _id = ObjectId()...
+    model = mongoengine.StringField(required=True)
+    make = mongoengine.StringField(required=True)
+    year = mongoengine.IntField(required=True)
+    mileage = mongoengine.FloatField(default=0.0)
+    vi_number = mongoengine.StringField(default=lambda: str(uuid.uuid4()).replace('-',''))
+
+    engine = mongoengine.EmbeddedDocumentField(Engine,required=True)
+
+    meta = {
+        'db_alias':'core',
+        'collection': 'cars',
+    }
+```
+
+service_app.py
 

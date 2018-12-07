@@ -2,6 +2,8 @@ import nosql.mongo_setup as mongo_setup
 
 from nosql.car import Car
 
+from nosql.engine import Engine
+
 
 def main():
     print_header()
@@ -58,6 +60,13 @@ def add_car():
     car.year = year
     # car.mileage = mileage
     # car.vi_number = vin
+
+    engine = Engine()
+    engine.horsepower = 600
+    engine.mpg = 20
+    engine.liters = 5.0
+
+    car.engine = engine
 
     car.save()   # in order to insert it to db in active record style, where we work with a single document
 
