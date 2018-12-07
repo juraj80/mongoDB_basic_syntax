@@ -645,5 +645,101 @@ def user_loop():
      
 ```
 
+Now we can start defining our classes that we are going to map to the db.
+First we need to decide how we are going to store the data and what the data is.
 
-        
+So we are going to have a car, a car is going to have an engine with lots of details about the engine, like its horsepower
+and so on. A car is going to have a service history and each entry in the services history is going to be some additional
+information, like what was the work performed, how much did it cost, when was it done, etc.
+
+There is going to be an owner who can own multiple cars and a car can be owned by multiple people, so there is a many to
+many relationship between owners and cars. The owners have personal information like their address and stuff like that.
+
+We are going to create a file Car in the nosql folder with definition of class for Car object.
+
+We want all the classes, which we want to map to the db, derive from mongoengine.Document. This allows us to load, save 
+and query documents. It also provides a field called id, which maps to undescore id in the db. We are going to give it a
+couple of pieces of information like what model is it, what make, etc. So we define the properties of document as a descriptor,
+so it's a mongoengine. We need also to define the meta dictionary and dictionary is going to say the db alias we want to use is
+'core', then we can also control the name of the collections.
+
+nosql/car.py
+```
+import mongoengine
+
+class Car(mongoengine.Document):
+#    id # --> _id = ObjectId()...
+    model = mongoengine.StringField()
+    make = mongoengine.StringField()
+    year = mongoengine.IntField()
+    mileage = mongoengine.FloatField()
+    vi_number = mongoengine.StringField()
+
+    meta = {
+        'db_alias':'core',
+        'collection': 'cars',
+    }
+```
+
+In main application service_app.py we define add_car() function, where we initialize the car object and save it to DB.
+
+service_app.py
+```
+import nosql.mongo_setup as mongo_setup
+
+from mongoengine.service_central_starter.nosql.car import Car
+
+
+def main():
+    print_header()
+    config_mongo()
+    user_loop()
+
+...
+
+def add_car():
+#    print("TODO: add_car")
+    model = input('What is the model?')
+    make = input('What is the make?')
+    year = int(input('Year built?'))
+    mileage = float(input('Mileage?'))
+    vin = input('VIN? ')
+
+    car = Car()
+    car.model = model
+    car.make = make
+    car.year = year
+    car.mileage = mileage
+    car.vi_number = vin
+
+    car.save()   # in order to insert it to db in active record style, where we work with a single document
+
+...
+
+```
+
+We can update the car script with the required fields for the car class.
+```
+import uuid
+import mongoengine
+
+
+class Car(mongoengine.Document):
+#    id # --> _id = ObjectId()...
+    model = mongoengine.StringField(required=True)
+    make = mongoengine.StringField(required=True)
+    year = mongoengine.IntField(required=True)
+    mileage = mongoengine.FloatField(default=0.0)
+    vi_number = mongoengine.StringField(default=lambda: str(uuid.uuid4()).replace('-',''))
+
+    meta = {
+        'db_alias':'core',
+        'collection': 'cars',
+    }
+```
+
+and delete the auto generated variables from add_car() function in main application.
+
+
+
+

@@ -1,5 +1,8 @@
 import nosql.mongo_setup as mongo_setup
 
+from nosql.car import Car
+
+
 def main():
     print_header()
     config_mongo()
@@ -43,7 +46,21 @@ def user_loop():
 
 
 def add_car():
-    print("TODO: add_car")
+    model = input('What is the model?')
+    make = input('What is the make?')
+    year = int(input('Year built?'))
+    # mileage = float(input('Mileage?'))
+    # vin = input('VIN? ')
+
+    car = Car()
+    car.model = model
+    car.make = make
+    car.year = year
+    # car.mileage = mileage
+    # car.vi_number = vin
+
+    car.save()   # in order to insert it to db in active record style, where we work with a single document
+
 
 
 def list_cars():
