@@ -876,3 +876,60 @@ class Car(mongoengine.Document):
     }
 ```
 
+Now it's time to service the car. So, we got a couple of options here, we can grab a random car from db or we can first 
+implement the list_cars function, so we could hit list_cars and then we can ask for the id or something to that effect of
+the car. We haven't done any queries yet, all we done so far is some inserts. For listing or any sort of query we update 
+the list_car function with following object query: `Car.objects().order_by("-year")`
+
+```
+def list_cars():
+    cars = Car.objects().order_by("-year")
+    for car in cars:
+        print("{} -- {} with vin {} (year {})".format(car.make, car.model, car.vi_number, car.year))
+    print()
+```
+```
+Available actions:
+ * [a]dd car
+ * [l]ist cars
+ * [f]ind car
+ * perform [s]ervice
+ * e[x]it
+
+> l
+Ferrari -- F40 with vin A3848483F (year 2005)
+Audi -- Q5 with vin 1b03ade2b77c4e08b1bb1553603d9543 (year 2012)
+BMW -- X6 with vin f9186f802ad144b1a714f5d0e64b8002 (year 2015)
+Ferrari -- F40 with vin d5748aa031c6475194aa989ae9518a78 (year 2017)
+```
+
+So what we want to do is basically use this vin number, to go find the car we want to service. Now that we can see the cars 
+we can say I want to service a car, we can hit s, and it is supposed to say okay what car do you want to service and we give 
+it one of these. Then it will go to the database, find the car and then insert a service record to it.
+
+First we update the list_cars function to display details about number of services with prices and some description.
+
+service_app.py
+```
+def list_cars():
+    cars = Car.objects().order_by("-year")
+    for car in cars:
+        print("{} -- {} with vin {} (year {})".format(car.make, car.model, car.vi_number, car.year))
+       *print("{} of service records".format(len(car.service_history)))
+       *for s in car.service_history:
+           *print("  * ${:,.02} {}".format(s.price, s.description))
+    print()
+```
+
+Then we can use the VIN number of car we want to service to filter it out from db.
+
+```
+def service_car():
+    vin = input("What is the VIN of the car to service? ")
+#    car = Car.objects().filter(vi_number=vin).first() # this will return the list of cars that match this
+    car = Car.objects(vi_number=vin).first() # simpler version
+    if not car:
+        print("Car with VIN {} not found!".format(vin))
+        return
+    print("We will service " + car.model)
+```

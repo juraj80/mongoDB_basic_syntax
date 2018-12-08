@@ -73,16 +73,26 @@ def add_car():
 
 
 def list_cars():
-    print("TODO: list_cars")
-
+    cars = Car.objects().order_by("-year")
+    for car in cars:
+        print("{} -- {} with vin {} (year {})".format(car.make, car.model, car.vi_number, car.year))
+        print("{} of service records".format(len(car.service_history)))
+        for s in car.service_history:
+            print("  * ${:,.02} {}".format(s.price, s.description))
+    print()
 
 def find_car():
     print("TODO: find_car")
 
 
 def service_car():
-    print("TODO: service_car")
-
+    vin = input("What is the VIN of the car to service? ")
+#    car = Car.objects().filter(vi_number=vin).first() # this will return the list of cars that match this
+    car = Car.objects(vi_number=vin).first() # simpler version
+    if not car:
+        print("Car with VIN {} not found!".format(vin))
+        return
+    print("We will service " + car.model)
 
 if __name__ == '__main__':
     main()
