@@ -48,10 +48,10 @@ def user_loop():
 
 
 def add_car():
-    model = input('What is the model?')
-    make = input('What is the make?')
-    year = int(input('Year built?'))
-    # mileage = float(input('Mileage?'))
+    model = input('What is the model? ')
+    make = input('What is the make? ')
+    year = int(input('Year built? '))
+    # mileage = float(input('Mileage? '))
     # vin = input('VIN? ')
 
     car = Car()
@@ -66,7 +66,7 @@ def add_car():
     engine.mpg = 20
     engine.liters = 5.0
 
-    car.engine = engine
+    car.engine = engine  # equals to an object
 
     car.save()   # in order to insert it to db in active record style, where we work with a single document
 

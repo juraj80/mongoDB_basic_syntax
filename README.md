@@ -792,7 +792,7 @@ class Car(mongoengine.Document):
     mileage = mongoengine.FloatField(default=0.0)
     vi_number = mongoengine.StringField(default=lambda: str(uuid.uuid4()).replace('-',''))
 
-    engine = mongoengine.EmbeddedDocumentField(Engine,required=True)
+   *engine = mongoengine.EmbeddedDocumentField(Engine,required=True)
 
     meta = {
         'db_alias':'core',
@@ -801,4 +801,78 @@ class Car(mongoengine.Document):
 ```
 
 service_app.py
+
+```
+def add_car():
+    model = input('What is the model? ')
+    make = input('What is the make? ')
+    year = int(input('Year built? '))
+    # mileage = float(input('Mileage? '))
+    # vin = input('VIN? ')
+
+    car = Car()
+    car.model = model
+    car.make = make
+    car.year = year
+    # car.mileage = mileage
+    # car.vi_number = vin
+
+   *engine = Engine()
+   *engine.horsepower = 600
+   *engine.mpg = 20
+   *engine.liters = 5.0
+
+   *car.engine = engine  # equals to an object
+
+    car.save()   # in order to insert it to db in active record style, where we work with a single document
+```
+
+Next we want to add service history to the car document. The question is, do we want to embed this into the car like we 
+did it with the engine or save it some other way. Remember, when we are designing our documents one of the primary questions
+is in our application do we want that embedded data with us most of the time? In our case, we do almost always want the service
+history associated with the car and we don't usually need the service history without the car. We need details about the car 
+like the mileage for example. So we probably want to embed the service history as an array into this car. The other thing
+we have to care about is that set bounded and is that bound small? The service history should be ongoing, for example once a month.
+That would give us at most a hundred of these service histories. Let's say for some reason that like that upper bound is
+totally fine with us. It's certainly not crazy unbounded where it's going to escape the 16MB RAM. So we create new class
+the servicehistory module with the servicehistory class and save it as an embedded list in the car class.
+
+nosql/servicehistory.py
+
+```
+import mongoengine
+import datetime
+
+class ServiceHistory(mongoengine.EmbeddedDocument):
+    date = mongoengine.DateTimeField(default=datetime.datetime.now) # we pass here a function, we don't want to call it, could use also lambda
+    description = mongoengine.StringField()
+    price = mongoengine.FloatField()
+    customer_rating = mongoengine.IntField(min_value=1,max_value=5)
+```
+nosql/car.py
+```
+import uuid
+import mongoengine
+
+from nosql.engine import Engine
+
+from nosql.servicehistory import ServiceHistory
+
+
+class Car(mongoengine.Document):
+#    id # --> _id = ObjectId()...
+    model = mongoengine.StringField(required=True)
+    make = mongoengine.StringField(required=True)
+    year = mongoengine.IntField(required=True)
+    mileage = mongoengine.FloatField(default=0.0)
+    vi_number = mongoengine.StringField(default=lambda: str(uuid.uuid4()).replace('-',''))
+
+    engine = mongoengine.EmbeddedDocumentField(Engine,required=True) # an Embedded Document Field --> single engine, not a list,
+   *service_history = mongoengine.EmbeddedDocumentListField(ServiceHistory)
+
+    meta = {
+        'db_alias':'core',
+        'collection': 'cars',
+    }
+```
 
