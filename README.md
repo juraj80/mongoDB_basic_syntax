@@ -934,6 +934,8 @@ def service_car():
     print("We will service " + car.model)
 ```
 
+**Adding service histories by whole document**
+
 Now, let's go and actually add the service record. We are going to import service_history class an create a 
 service_history instance in service_car function. Then we are going to ask for the properties of price, service description, 
 and customer_rating and append it directly to the car.service_history list as an object. Once we changed the car we need 
@@ -957,4 +959,72 @@ def service_car():
    *car.service_history.append(service)
    *car.save() # to push it to the db
     
+```
+
+**Adding service histories  with in-place updates**
+
+We might consider, what will fine for this kind of application, but if there is contention around these documents, like 
+multiple things you are trying to update the same record, you could run into some trouble. We could add optimistic
+concurrency by manually implementing it and that would solve that problem, but we could actually make this perform better
+as well as avoid that problem entirely.
+
+So we are going to ask for a vin, create the service history and instead of pulling the record back, making a change and 
+pushing the entire document, which could be like 200K, we just want to move this data over and use `$addToSet` and `$push` 
+operators to put it onto the list in the document. In MongoEngine we will use double underscore with operator
+`push__service_history=service` to push service ont service history.
+
+```
+def service_car():
+    vin = input("What is the VIN of the car to service? ")
+    service = ServiceHistory()
+    service.price = float(input("What is the price of service? "))
+    service.description = input("What type of service is this? ")
+    service.customer_rating = int(input("How happy is our customer? [1-5] "))
+
+   *updated = Car.objects().filter(vi_number=vin).update_one(push__service_history=service) # it does update the doc, if
+    # it finds it, will return 1, if not returns 0.
+   *if updated == 0:
+        print("Car with VIN {} not found!".format(vin))
+        return
+```
+This is a much higher performance and safer thing to do. We could use also `add_to_set` operator if we want unique elements in 
+the list.
+
+
+**Subdocument queries**
+
+So far we talked about the atomic update operators, but not things like the greater than, less than, exists, doesn't exist,
+in set and so on, so we want to look at that, we also want to look at querying into subdocuments. Maybe we want to ask 
+questions like show me the cars that have had some really good service or really bad service. We do queries to subarrays with
+double underscore as we used it for push onto a thing.
+
+```
+def show_poorly_serviced_cars():
+    
+   *level = int(input("What level of satisfaction are we looking for? [1-5]"))
+   *cars = Car.objects().filter(service_history__customer_rating=level)
+    for car in cars:
+        print("{} -- {} with vin {} (year {})".format(car.make, car.model, car.vi_number, car.year))
+        print("{} of service records".format(len(car.service_history)))
+        for s in car.service_history:
+            print("  * Satisfaction: {} ${:,.0f} {}".format(s.customer_rating, s.price, s.description))
+    print()
+
+```
+
+The last thing that we are looking for is, we would like to find the cars that have below excellent service. In PyMongo 
+we would write something like this `{ "service_history.customer_rating" : {$lte: level}}`. Here we put query operator at the end
+of query statement.
+
+```
+def show_poorly_serviced_cars():
+    level = int(input("What max level of satisfaction are we looking for? [1-5]"))
+    # { "service_history.customer_rating" : {$lte: level}}
+   *cars = Car.objects().filter(service_history__customer_rating__lte=level)
+    for car in cars:
+        print("{} -- {} with vin {} (year {})".format(car.make, car.model, car.vi_number, car.year))
+        print("{} of service records".format(len(car.service_history)))
+        for s in car.service_history:
+            print("  * Satisfaction: {} ${:,.0f} {}".format(s.customer_rating, s.price, s.description))
+    print()
 ```

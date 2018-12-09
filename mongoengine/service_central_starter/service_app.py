@@ -26,6 +26,7 @@ def config_mongo():
     mongo_setup.global_init()
 
 
+
 def user_loop():
     while True:
         print("Available actions:")
@@ -33,6 +34,7 @@ def user_loop():
         print(" * [l]ist cars")
         print(" * [f]ind car")
         print(" * perform [s]ervice")
+        print(" * [p]oorly serviced cars")
         print(" * e[x]it")
         print()
         ch = input("> ").strip().lower()
@@ -44,6 +46,8 @@ def user_loop():
             find_car()
         elif ch == 's':
             service_car()
+        elif ch == 'p':
+            show_poorly_serviced_cars()
         elif not ch or ch == 'x':
             print("Goodbye")
             break
@@ -89,20 +93,28 @@ def find_car():
 
 def service_car():
     vin = input("What is the VIN of the car to service? ")
-#    car = Car.objects().filter(vi_number=vin).first() # this will return the list of cars that match this
-    car = Car.objects(vi_number=vin).first() # simpler version of query, it will give us the same list
-    if not car:
-        print("Car with VIN {} not found!".format(vin))
-        return
-
-    print("We will service " + car.model)
     service = ServiceHistory()
     service.price = float(input("What is the price of service? "))
     service.description = input("What type of service is this? ")
     service.customer_rating = int(input("How happy is our customer? [1-5] "))
 
-    car.service_history.append(service)
-    car.save() # to push it to the db
+    updated = Car.objects().filter(vi_number=vin).update_one(push__service_history=service) # it does update the doc, if
+    # it finds it, will return 1, if not returns 0.
+    if updated == 0:
+        print("Car with VIN {} not found!".format(vin))
+        return
+
+
+def show_poorly_serviced_cars():
+    level = int(input("What max level of satisfaction are we looking for? [1-5]"))
+    # { "service_history.customer_rating" : {$lte: level}}
+    cars = Car.objects().filter(service_history__customer_rating__lte=level)
+    for car in cars:
+        print("{} -- {} with vin {} (year {})".format(car.make, car.model, car.vi_number, car.year))
+        print("{} of service records".format(len(car.service_history)))
+        for s in car.service_history:
+            print("  * Satisfaction: {} ${:,.0f} {}".format(s.customer_rating, s.price, s.description))
+    print()
 
 if __name__ == '__main__':
     main()
