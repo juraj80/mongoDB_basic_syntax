@@ -933,3 +933,28 @@ def service_car():
         return
     print("We will service " + car.model)
 ```
+
+Now, let's go and actually add the service record. We are going to import service_history class an create a 
+service_history instance in service_car function. Then we are going to ask for the properties of price, service description, 
+and customer_rating and append it directly to the car.service_history list as an object. Once we changed the car we need 
+to push that to the db.
+
+```
+def service_car():
+    vin = input("What is the VIN of the car to service? ")
+#    car = Car.objects().filter(vi_number=vin).first() # this will return the list of cars that match this
+    car = Car.objects(vi_number=vin).first() # simpler version of query, it will give us the same list
+    if not car:
+        print("Car with VIN {} not found!".format(vin))
+        return
+
+    print("We will service " + car.model)
+   *service = ServiceHistory()
+   *service.price = float(input("What is the price of service? "))
+   *service.description = input("What type of service is this? ")
+   *service.customer_rating = int(input("How happy is our customer? [1-5] "))
+
+   *car.service_history.append(service)
+   *car.save() # to push it to the db
+    
+```
