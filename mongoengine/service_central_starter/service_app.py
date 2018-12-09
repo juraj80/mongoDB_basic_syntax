@@ -4,6 +4,8 @@ from nosql.car import Car
 
 from nosql.engine import Engine
 
+from nosql.servicehistory import ServiceHistory
+
 
 def main():
     print_header()
@@ -73,12 +75,12 @@ def add_car():
 
 
 def list_cars():
-    cars = Car.objects().order_by("-year")
+    cars = Car.objects().order_by("-year") # query of objects ordered by year
     for car in cars:
         print("{} -- {} with vin {} (year {})".format(car.make, car.model, car.vi_number, car.year))
         print("{} of service records".format(len(car.service_history)))
         for s in car.service_history:
-            print("  * ${:,.02} {}".format(s.price, s.description))
+            print("  * ${:,.0f} {}".format(s.price, s.description))
     print()
 
 def find_car():
@@ -88,11 +90,19 @@ def find_car():
 def service_car():
     vin = input("What is the VIN of the car to service? ")
 #    car = Car.objects().filter(vi_number=vin).first() # this will return the list of cars that match this
-    car = Car.objects(vi_number=vin).first() # simpler version
+    car = Car.objects(vi_number=vin).first() # simpler version of query, it will give us the same list
     if not car:
         print("Car with VIN {} not found!".format(vin))
         return
+
     print("We will service " + car.model)
+    service = ServiceHistory()
+    service.price = float(input("What is the price of service? "))
+    service.description = input("What type of service is this? ")
+    service.customer_rating = int(input("How happy is our customer? [1-5] "))
+
+    car.service_history.append(service)
+    car.save() # to push it to the db
 
 if __name__ == '__main__':
     main()
