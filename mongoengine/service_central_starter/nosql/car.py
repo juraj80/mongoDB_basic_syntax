@@ -14,7 +14,7 @@ class Car(mongoengine.Document):
     mileage = mongoengine.FloatField(default=0.0)
     vi_number = mongoengine.StringField(default=lambda: str(uuid.uuid4()).replace('-',''))
 
-    engine = mongoengine.EmbeddedDocumentField(Engine,required=True) # an Embedded Document Field --> single engine, not a list,
+    engine = mongoengine.EmbeddedDocumentField(Engine) # an Embedded Document Field --> single engine, not a list,
     service_history = mongoengine.EmbeddedDocumentListField(ServiceHistory)
 
     meta = {

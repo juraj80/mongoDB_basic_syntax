@@ -10,6 +10,7 @@ from nosql.servicehistory import ServiceHistory
 def main():
     print_header()
     config_mongo()
+ #   update_doc_versions()
     user_loop()
 
 
@@ -25,6 +26,10 @@ def print_header():
 def config_mongo():
     mongo_setup.global_init()
 
+def update_doc_versions():
+    for car in Car.objects():
+        car._mark_as_changed('vi_number')
+        car.save()
 
 
 def user_loop():
