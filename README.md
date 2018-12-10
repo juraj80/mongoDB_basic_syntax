@@ -562,7 +562,7 @@ Episode#109: MongoDB Applied Design Patterns
 https://talkpython.fm/109
 
 
-**Mapping classes to MongoDB with the ODM MongoEngine**
+#Mapping classes to MongoDB with the ODM MongoEngine
 
 ![alt text](src/pic32.png)
 
@@ -1064,3 +1064,115 @@ def update_doc_versions():
         car._mark_as_changed('vi_number')
         car.save()
 ```
+
+**Concept: Registering connections**
+
+![alt text](src/pic33.png)
+
+This work well if we are just connecting on local host, no authentication, default port.. When we get to the production 
+deployment, we're going to need ssl, to enable authentication and pass credentials. So we can use a more complicated 
+variation here. 
+
+![alt text](src/pic34.png)
+
+The values in data dict for username, password, etc could be in a web app where these values are stored in the config file.
+
+**Concept: Creating basic classes**
+
+![alt text](src/pic35.png)
+
+The way we primarily work with MongoEngine, is we create classes and we map those to collections. So here we have a class
+called car and anything that maps to a collection is a top level document that must be derived from mongoengine.document.
+Then we set up all the fields that could be simple or as we saw they could be nested rich objects.
+
+![alt text](src/pic36.png)
+
+Finally, we said look, our cars also are going to contain an engine, and we don't want to go and do a separate query to 
+a separate table or separate collection specifically to find out details about the engine and store like the car id in the
+engine, so instead, we're just going to embed it straight into the car. So we did that by first creating an engine class has 
+to derive from mongoengine.EmbeddedDocument and then we're going to set the type of it here to be an embedded document field
+which takes two things, the type that we're going to put there so the engine class and whether it's required or optional. 
+
+We also want to store a service_history as a set of rich documents modeled by service records. This time it's a list of them
+ant this basically starts out as an empty list and then as we wish we can append these service records to it and then save
+them back.
+
+So if we have our car model like this and we put one into the database it's going to come out looking like this:
+
+
+```
+{
+    "_id" : ObjectId("5c0ad6d0bd09bd9817b56ac7"),
+    "model" : "Q5",
+    "make" : "Audi",
+    "year" : 2012,
+    "mileage" : 0.0,
+    "vi_number" : "1b03ade2b77c4e08b1bb1553603d9543",
+    "engine" : {
+        "horsepower" : 600,
+        "liters" : 5.0,
+        "mpg" : 20.0,
+        "serial_number" : "d7379440-1f08-4c67-9684-3ee0527a6434"
+    },
+    "service_history" : [ 
+        {
+            "date" : ISODate("2018-12-09T16:24:18.587Z"),
+            "description" : "change of engine",
+            "price" : 3000.0,
+            "customer_rating" : 5
+        }, 
+        {
+            "date" : ISODate("2018-12-09T16:27:25.065Z"),
+            "description" : "flat tire",
+            "price" : 120.0,
+            "customer_rating" : 4
+        }, 
+        {
+            "date" : ISODate("2018-12-09T19:09:35.549Z"),
+            "description" : "waxing",
+            "price" : 123.0,
+            "customer_rating" : 5
+        }, 
+        {
+            "date" : ISODate("2018-12-09T19:11:38.349Z"),
+            "description" : "Checkup",
+            "price" : 12.0,
+            "customer_rating" : 3
+        }
+    ]
+}
+
+```
+
+**Concept: Inserting objects with mongoengine**
+
+Here we are going to create a car, the car requires the engine and the engine must be an instance of an engine object.  
+So we're first going to create an engine, set things like horsepower, the liters, mpg. Then we're going to create the car,
+its model is a Bolt, its make is Chevy and the year is 2017, and then we just pass the engine along. So then we have our car,
+and right now the id of the car is not stored in the db, so we hit save and boom, now we have a car with its id and its 
+default values set all of those things stored in the database. 
+
+![alt text](src/pic37.png)
+
+So this is great for inserting one car, but if you are going to insert a thousand or a hundred thousand or a million cars
+you do not want to do this, there's a much better way. You should do some kind of bulk insert but how do you do that? 
+
+Also super easy, let's suppose we have a list of cars that we want to insert and here we are not showing how we initialize 
+the cars, but same as above basically, but skip the save step, so we're going to get car one, car two, we want to insert
+a bunch of them, we just go car.objects().insert and give it that list and boom it does a bulk insert in MongoDB, which 
+if you are inserting many items is much much faster.
+
+![alt text](src/pic38.png)
+
+**Concept: Querying with mongoengine**
+
+![alt text](src/pic39.png)
+
+We might want to query by subdocuments or things contained in a list inside of that document.
+
+![alt text](src/pic40.png)
+
+Here we want to know like show me all the cars that were not rated with great service.
+
+![alt text](src/pic41.png)
+
