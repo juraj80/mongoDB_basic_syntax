@@ -1176,3 +1176,16 @@ Here we want to know like show me all the cars that were not rated with great se
 
 ![alt text](src/pic41.png)
 
+**Concept: Updates with mongoengine**
+
+![alt text](src/pic42.png)
+
+When contention is high and we care about performance or we just want to take most advantage of MongoDB, we should use 
+the inplace updates. For example here we can see this owner object and this is like the owner of the car, so we want to
+record how many times has this owner been to our service shop, owners could own more than one car, so we want to record 
+how many times he visited our service.
+
+![alt text](src/pic43.png)
+
+
+# High performance MongoDB
