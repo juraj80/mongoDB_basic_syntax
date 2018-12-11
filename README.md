@@ -1189,3 +1189,76 @@ how many times he visited our service.
 
 
 # High performance MongoDB
+
+Simple and fast.
+
+![alt text](src/pic44.png)
+
+
+![alt text](src/pic45.png)
+
+![alt text](src/pic46.png)
+
+How do we make this fast? Let's have a look at the various knobs, that we can turn to control MongoDB performance.
+
+
+What levers and knobs do we have?
+
+- Indexes
+  
+  There are not too many indexes added to MongoDB by default, in fact, the only index that is set up is on _id. Almost 
+  always is the problem of incorrect use of indexes.
+  
+- Document design
+  
+  It turns out the document design has dramatic implications across the board
+   
+- Query style
+  
+  We can write queries differently and end up with higher perfomance results.
+  
+- Projections and subsets of responses
+
+  We can limit our set of returned responses and this can help for performance
+
+
+MongoDB being a NoSql database, allows for other types of interactions, other configurations and network topologies, which
+we won't cover here.
+
+- Replication (read boost only)
+  
+  Replication is responsible for redundancy and failover. Instead of just having one server we could have three servers, 
+  and they could work in triplicate, one is the primary and you read and write from this db and the other two are just 
+  there ready to spring into action, always getting themselves in sync with the primary, and if one goes down, the other
+  becomes the primary. There is no performance bnefit from that at all. However, there are ways to configure our connection
+  to allow us to read not just from the primary one, but also from the secondary, so we can configure a replication for a 
+  performance boost, but mostly this is a durability thing.
+
+- Sharding
+  
+  The other type of network configuration we can do is what's called sharding. We instead of putting all our data into one 
+  individual server, we might spread this across 10 or 20 servers, one 20th of evenly balanced servers, across all of them,
+  and then when we issue a query, can either figure out where, if it's based on the shard key, which server to point that at
+  and let that one handle the query across the smaller set of data or if it's general like show me all the things with
+  greater than this for the price, it might need to query that from all 20 servers, but it would run on parallel on 20 
+  machines. So sharding is all about speeding up performance.
+
+**Creating the big DB**
+
+`MacBook-Pro-xxx:etc xxx$ mongorestore --drop --db dealership /Users/mongodb-for-python-developers/data/dealership `
+
+How we can add an index in MongoDB with mongoengine?
+
+db.cars.createIndex({'service_history.price':1 }, {name: 'Search by service history price'})
+```
+{
+    "createdCollectionAutomatically" : false,
+    "numIndexesBefore" : 1,
+    "numIndexesAfter" : 2,
+    "ok" : 1.0
+}
+```
+
+![alt text](src/pic47.png)
+
+
