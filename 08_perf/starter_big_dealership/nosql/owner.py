@@ -15,7 +15,7 @@ class Owner(mongoengine.Document):
 
     # show off many-to-many modeling with one sided list field
     # cars can have multiple owners and an owner can own multiple cares
-    car_ids = mongoengine.ListField(mongoengine.ObjectIdField())
+    car_ids = mongoengine.ListField(mongoengine.ObjectIdField()) # list of ids of the cars, which we push here
 
     meta = {
         'db_alias': 'core',
