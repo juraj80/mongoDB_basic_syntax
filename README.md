@@ -1259,6 +1259,7 @@ db.cars.createIndex({'service_history.price':1 }, {name: 'Search by service hist
 }
 ```
 
+
 ![alt text](src/pic47.png)
 
 We created the owner class with an embedded list of the owned cars.
@@ -1291,5 +1292,7 @@ class Owner(mongoengine.Document):
         ]
     }
 ```
+
+
 
 
