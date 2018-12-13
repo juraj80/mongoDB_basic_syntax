@@ -1245,26 +1245,17 @@ we won't cover here.
 
 **Creating the big DB**
 
-`MacBook-Pro-xxx:etc xxx$ mongorestore --drop --db dealership /Users/mongodb-for-python-developers/data/dealership `
+`MacBook-Pro-xxx:etc xxx$ mongorestore --drop --db dealership /Users/xxx/data/dealership `
 
-How we can add an index in MongoDB with mongoengine?
+Source code:
 
-db.cars.createIndex({'service_history.price':1 }, {name: 'Search by service history price'})
-```
-{
-    "createdCollectionAutomatically" : false,
-    "numIndexesBefore" : 1,
-    "numIndexesAfter" : 2,
-    "ok" : 1.0
-}
-```
+https://github.com/juraj80/mongoDB_with_Python/tree/master/08_perf/starter_big_dealership
 
 
-![alt text](src/pic47.png)
 
-We created the owner class with an embedded list of the owned cars.
+New: addition of the concept of an owner class with an embedded list of the owned cars.
 
-owner.py
+nosql/owner.py
 ```
 from datetime import datetime
 
@@ -1292,6 +1283,483 @@ class Owner(mongoengine.Document):
         ]
     }
 ```
+
+New: all car queries moved to the separate script
+
+services/car_service.py
+
+```
+import typing
+
+import bson
+import datetime
+
+from nosql.car import Car
+from nosql.engine import Engine
+from nosql.owner import Owner
+from nosql.service_record import ServiceRecord
+
+
+def create_owner(name: str) -> Owner:
+    owner = Owner(name=name)
+    owner.save()
+
+    return owner
+
+
+def create_car(model: str, make: str, year: int,
+               horsepower: int, liters: float,
+               mpg: float, mileage: int) -> Car:
+    engine = Engine(horsepower=horsepower, liters=liters, mpg=mpg)
+    car = Car(model=model, make=make, year=year, engine=engine, mileage=mileage)
+    car.save()
+
+    return car
+
+
+def record_visit(customer):
+    Owner.objects(name=customer).update_one(inc__number_of_visits=1)
+
+
+def find_cars_by_make(make) -> Car:
+    car = Car.objects(make=make).first()
+    return car
+
+
+def find_owner_by_name(name) -> Owner:
+    t0 = datetime.datetime.now()
+    owner = Owner.objects(name=name).first()
+    dt = datetime.datetime.now() - t0
+    print("Owner found in {} ms".format(dt.total_seconds() * 1000))
+
+    return owner
+
+
+def find_owner_by_id(owner_id) -> Owner:
+    owner = Owner.objects(id=owner_id).first()
+    return owner
+
+
+def find_cars_with_bad_service(limit=10) -> typing.List[Car]:
+    cars = Car.objects(service_history__customer_rating__lt=4)[:limit]
+    return list(cars)
+
+
+def percent_cars_with_bad_service():
+    t0 = datetime.datetime.now()
+    bad = Car.objects().filter(service_history__customer_rating__lte=1).count()
+    dt = datetime.datetime.now() - t0
+    print("bad computed in {} ms, bad: {:,}".format(dt.total_seconds() * 1000, bad))
+
+    all_cars = Car.objects().count()
+
+    percent = 100 * bad / max(all_cars, 1)
+    return percent
+
+
+def find_car_by_id(car_id: bson.ObjectId) -> Car:
+    car = Car.objects(id=car_id).first()
+    Car.objects().filter(id=car_id).first()
+    return car
+
+
+def add_service_record(car_id, description, price, customer_rating):
+    record = ServiceRecord(description=description, price=price, customer_rating=customer_rating)
+
+    res = Car.objects(id=car_id).update_one(push__service_history=record)
+    if res != 1:
+        raise Exception("No car with id {}".format(car_id))
+
+
+def add_owner(owner_id, car_id):
+    res = Owner.objects(id=owner_id).update_one(add_to_set__car_ids=car_id)
+    if res != 1:
+        raise Exception("No owner with id {}".format(owner_id))
+```
+
+New: script for computing stats
+
+db_stats.py
+
+```
+
+from nosql import mongo_setup
+from nosql.car import Car
+from nosql.owner import Owner
+
+
+def main():
+    mongo_setup.init()
+
+    print("Computing stats, this WILL take awhile...", flush=True)
+
+    cars = list(Car.objects())
+    print("There are {:,} cars.".format(len(cars)))
+
+    owners = list(Owner.objects())
+    print("There are {:,} owners.".format(len(owners)))
+    owned_cars = sum((len(o.car_ids) for o in owners))
+    print("Each owner owns an average of {:.2f} cars.".format(owned_cars / len(owners)))
+
+    service_histories = sum((len(c.service_history) for c in cars))
+    print("There are {:,} service histories.".format(service_histories))
+    print("Each car has an average of {:.2f} service records.".format(service_histories / len(cars)))
+
+
+main()
+```
+
+New: a script to create a db
+
+Note: a use of Faker to generate random owners
+
+load_data.py
+
+```
+import nosql.mongo_setup as mongo_setup
+import services.car_service as car_service
+from nosql.car import Car
+from nosql.engine import Engine
+from nosql.owner import Owner
+
+from datetime import datetime
+import random
+from faker import Faker
+
+from nosql.service_record import ServiceRecord
+
+
+def main():
+    # large data DB example
+    car_count = 250_000
+    owner_count = 100_000
+
+    # simple DB example
+    # car_count = 200
+    # owner_count = 100
+
+    mongo_setup.init()
+    clear_db()
+
+    t0 = datetime.now()
+
+    fake = create_faker_and_seed()
+    owners = create_owners(fake, count=owner_count)
+    print("Created {:,.0f} owners".format(len(owners)))
+    cars = create_cars(count=car_count)
+    print("Created {:,.0f} cars".format(len(cars)))
+    if cars and owners:
+        add_cars_to_owners(owners, cars)
+        create_service_records(cars, fake)
+
+    dt = datetime.now() - t0
+    print("Done in {} sec".format(dt.total_seconds()))
+
+
+models = [
+    'Ferrari 488 GTB',
+    'Ferrari 360 modena',
+    'F430',
+    '599 GTB Fiorano',
+    '458 Italia',
+    'LaFerrari',
+    'Testarossa',
+    'F12 Berlinetta',
+    '308 GTB/GTS',
+    'F355',
+    'California',
+    '575M Maranello',
+    'F50',
+    'F40',
+    'Enzo Ferrari',
+]
+
+service_operations = [
+    ('Oil change', 200),
+    ('New tires', 1000),
+    ('New engine', 15000),
+    ('Body repair', 4000),
+    ('New seat', 5000),
+    ('Tune up', 1500),
+    ('Air filter', 100),
+    ('Flat tire', 200),
+]
+
+
+def create_faker_and_seed():
+    fake = Faker()
+    fake.seed(42)
+    random.seed(42)
+    return fake
+
+
+def clear_db():
+    Car.drop_collection()
+    Owner.drop_collection()
+
+
+def create_owners(fake, count=100):
+    datetime_start = datetime(year=2000, month=1, day=1)
+    datetime_end = datetime(year=datetime.now().year, month=1, day=1)
+
+    owners = []
+    print("Building owners")
+    for _ in range(0, count):
+        owner = Owner()
+        owner.name = fake.name()
+        owner.created = fake.date_time_between_dates(datetime_start=datetime_start,
+                                                     datetime_end=datetime_end,
+                                                     tzinfo=None)
+        owners.append(owner)
+
+    print("Saving owners")
+    Owner.objects().insert(owners, load_bulk=True)
+
+    return list(Owner.objects())
+
+
+def create_cars(count=200):
+    current_car_count = Car.objects().count()
+    if current_car_count >= count:
+        print("There are currently {:,} cars. Skipping create.")
+        return []
+
+    count = count - current_car_count
+
+    hp_factor = 660
+    mpg_factor = 21
+    liters_factor = 4
+
+    cars = []
+    print("Building cars...")
+    for _ in range(0, count):
+        model = random.choice(models)
+        make = 'Ferrari'
+        year = random.randint(1985, datetime.now().year)
+        mileage = random.randint(0, 150000)
+
+        mpg = int((mpg_factor + mpg_factor * random.random() / 4) * 10) / 10.0
+        horsepower = int(hp_factor + hp_factor * random.random() / 2)
+        liters = int((liters_factor + liters_factor * random.random() / 2) * 100) / 100.0
+
+        engine = Engine(horsepower=horsepower, liters=liters, mpg=mpg)
+        car = Car(model=model, make=make, year=year, engine=engine, mileage=mileage)
+        cars.append(car)
+
+    print("Saving cars...")
+    Car.objects().insert(cars)
+
+    return list(Car.objects())
+
+
+def add_cars_to_owners(owners: list, cars: list):
+    for o in owners:
+        counter = random.randint(0, 5)
+        for _ in range(0, counter):
+            car = random.choice(cars)
+            car_service.add_owner(o.id, car.id)
+
+
+def create_service_records(cars, fake):
+    datetime_start = datetime(year=2000, month=1, day=1)
+    datetime_end = datetime(year=datetime.now().year, month=1, day=1)
+
+    for car in cars:
+        counter = random.randint(0, 10)
+        is_positive = random.randint(0, 1) == 1
+        for _ in range(0, counter):
+            s = random.choice(service_operations)
+            sr = ServiceRecord()
+            sr.description = s[0]
+            sr.date = fake.date_time_between_dates(datetime_start=datetime_start,
+                                                   datetime_end=datetime_end,
+                                                   tzinfo=None)
+            sr.price = int(s[1] + (random.random() - .5) * s[1] / 4)
+            if is_positive:
+                sr.customer_rating = random.randint(4, 5)
+            else:
+                sr.customer_rating = random.randint(1, 3)
+            car.service_history.append(sr)
+        car.save()
+
+
+if __name__ == '__main__':
+    main()
+
+```
+
+New: how long to take to answer questions from this database
+
+q_and_q.py
+
+```
+from nosql.car import Car
+from nosql.owner import Owner
+from datetime import datetime
+import nosql.mongo_setup as mongo_setup
+
+
+def timed(msg, func):
+    t0 = datetime.now()
+
+    func()
+
+    dt = datetime.now() - t0
+    print("{} Time: {:,.3f} ms".format(msg, dt.total_seconds() * 1000.0), flush=True)
+
+
+mongo_setup.init()
+
+print("Time to ask some questions")
+
+timed(
+    'How many owners?',
+    lambda: Owner.objects().filter().count()
+)
+timed(
+    'How many cars?',
+    lambda: Owner.objects().filter().count()
+)
+
+timed(
+    'Find the 10,000th owner?',
+    lambda: Owner.objects().order_by('name')[10000:10001][0]
+)
+
+owner = Owner.objects().order_by('name')[10000:10001][0]
+
+
+def find_cars_by_owner(owner_id):
+    the_owner = Owner.objects(id=owner_id).first()
+    cars = Car.objects().filter(id__in=the_owner.car_ids)
+    return list(cars)
+
+
+timed(
+    'How many cars are owned by the 10,000th owner?',
+    lambda: find_cars_by_owner(owner.id)
+)
+
+
+def find_owners_by_car(car_id):
+    owners = Owner.objects(car_ids=car_id)
+    return list(owners)
+
+
+car = Car.objects()[10000:10001][0]
+timed(
+    'How many owners own the 10,000th car?',
+    lambda: find_owners_by_car(car.id)
+)
+
+owner50k = Owner.objects()[50000:50001][0]
+timed(
+    'Find owner 50,000 by name?',
+    lambda: Owner.objects(name=owner50k.name).first()
+)
+
+timed(
+    'Cars with expensive service?',
+    lambda: Car.objects(service_history__price__gt=16800).count()
+)
+
+timed(
+    'Cars with expensive service and spark plugs?',
+    lambda: Car.objects(service_history__price__gt=16800, service_history__description='Spark plugs').count()
+)
+
+timed(
+    'Load cars with expensive service and spark plugs?',
+    lambda: list(Car.objects(service_history__price__gt=16800, service_history__description='Spark plugs'))
+)
+
+timed(
+    'Load car name and ids with expensive service and spark plugs?',
+    lambda: list(Car.objects(service_history__price__gt=16800, service_history__description='Spark plugs')
+                 .only('make', 'model', 'id'))
+)
+
+timed(
+    'Highly rated, high price service events?',
+    lambda: Car.objects(service_history__customer_rating=5, service_history__price__gt=16800).count()
+)
+
+timed(
+    'Low rated, low price service events?',
+    lambda: Car.objects(service_history__customer_rating=1, service_history__price__lt=50).count()
+)
+
+timed(
+    'How many high mileage cars?',
+    lambda: Car.objects(mileage__gt=140000).count()
+)
+```
+
+Query: Find a 61006th car and find all the owners
+
+![alt text](src/pic47.png)
+
+Query: Find a car with a service price higher than 16800.
+
+`db.cars.find({'service_history.price':{$gt: 16800}})`
+
+0.705 sec.
+
+Why is this taking 700 milliseconds?
+
+`db.cars.find({'service_history.price':{$gt: 16800}}).explain()`
+
+```
+/* 1 */
+{
+    "queryPlanner" : {
+        "plannerVersion" : 1,
+        "namespace" : "dealership.cars",
+        "indexFilterSet" : false,
+        "parsedQuery" : {
+            "service_history.price" : {
+                "$gt" : 16800.0
+            }
+        },
+        "winningPlan" : {
+            "stage" : "COLLSCAN",  <-- NOT GOOD
+            "filter" : {
+                "service_history.price" : {
+                    "$gt" : 16800.0
+                }
+            },
+            "direction" : "forward"
+        },
+        "rejectedPlans" : []
+    },
+    "serverInfo" : {
+        "host" : "xxx.local",
+        "port" : 27017,
+        "version" : "4.0.4",
+        "gitVersion" : "f288a3bdf201007f3693c58e140056adf8b04839"
+    },
+    "ok" : 1.0
+}
+```
+
+
+
+How we can add an index in MongoDB with mongoengine?
+
+db.cars.createIndex({'service_history.price':1 }, {name: 'Search by service history price'})
+```
+{
+    "createdCollectionAutomatically" : false,
+    "numIndexesBefore" : 1,
+    "numIndexesAfter" : 2,
+    "ok" : 1.0
+}
+```
+
+
+
+![alt text](src/pic48.png)
+
 
 
 
