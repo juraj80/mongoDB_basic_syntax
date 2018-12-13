@@ -1742,11 +1742,36 @@ Why is this taking 700 milliseconds?
 }
 ```
 
+Python code with mongoengine:
 
+Without indexes
 
-How we can add an index in MongoDB with mongoengine?
+`mongoDB_basic_syntax/08_perf/starter_big_dealership/q_and_a.py
+`
+```
+Time to ask some questions
+How many owners? Time: 40.521 ms
+How many cars? Time: 0.941 ms
+Find the 10,000th owner? Time: 1,911.872 ms
+How many cars are owned by the 10,000th owner? Time: 58.604 ms
+How many owners own the 10,000th car? Time: 1.352 ms
+Find owner 50,000 by name? Time: 22.854 ms
+Cars with expensive service? Time: 17.106 ms
+Cars with expensive service and spark plugs? Time: 993.791 ms
+Load cars with expensive service and spark plugs? Time: 20.993 ms
+Load car name and ids with expensive service and spark plugs? Time: 21.479 ms
+Highly rated, high price service events? Time: 21.930 ms
+Low rated, low price service events? Time: 3.592 ms
+How many high mileage cars? Time: 956.467 ms
 
-db.cars.createIndex({'service_history.price':1 }, {name: 'Search by service history price'})
+Process finished with exit code 0
+```
+
+**Adding indexes via the shell**
+
+`db.cars.createIndex({'service_history.price':1 }, {name: 'Search by service history price'})
+`
+
 ```
 {
     "createdCollectionAutomatically" : false,
@@ -1756,11 +1781,122 @@ db.cars.createIndex({'service_history.price':1 }, {name: 'Search by service hist
 }
 ```
 
-
+Running a query agian.
 
 ![alt text](src/pic48.png)
 
+Response is now 5 milliseconds.
 
+`db.cars.find({'service_history.price':{$gt: 16800}}).explain()`
 
+```
+/* 1 */
+{
+    "queryPlanner" : {
+        "plannerVersion" : 1,
+        "namespace" : "dealership.cars",
+        "indexFilterSet" : false,
+        "parsedQuery" : {
+            "service_history.price" : {
+                "$gt" : 16800.0
+            }
+        },
+        "winningPlan" : {
+            "stage" : "FETCH",
+            "inputStage" : {
+                "stage" : "IXSCAN",  <-- WINNING PLAN IS INDEX SCAN, WHICH IS SO MUCH FASTER
+                "keyPattern" : {
+                    "service_history.price" : 1.0
+                },
+                "indexName" : "Search by service history price",
+                "isMultiKey" : true,
+                "multiKeyPaths" : {
+                    "service_history.price" : [ 
+                        "service_history"
+                    ]
+                },
+                "isUnique" : false,
+                "isSparse" : false,
+                "isPartial" : false,
+                "indexVersion" : 2,
+                "direction" : "forward",
+                "indexBounds" : {
+                    "service_history.price" : [ 
+                        "(16800.0, inf.0]"
+                    ]
+                }
+            }
+        },
+        "rejectedPlans" : []
+    },
+    "serverInfo" : {
+        "host" : "xxx.local",
+        "port" : 27017,
+        "version" : "4.0.4",
+        "gitVersion" : "f288a3bdf201007f3693c58e140056adf8b04839"
+    },
+    "ok" : 1.0
+}
+```
+Python code with mongoengine:
 
+With indexes
 
+`mongoDB_basic_syntax/08_perf/starter_big_dealership/q_and_a.py
+`
+```
+Time to ask some questions
+How many owners? Time: 5.327 ms
+How many cars? Time: 0.597 ms
+Find the 10,000th owner? Time: 372.768 ms
+How many cars are owned by the 10,000th owner? Time: 3.495 ms
+How many owners own the 10,000th car? Time: 0.606 ms
+Find owner 50,000 by name? Time: 22.367 ms
+Cars with expensive service? Time: 2.480 ms
+Cars with expensive service and spark plugs? Time: 19.903 ms
+Load cars with expensive service and spark plugs? Time: 18.960 ms
+Load car name and ids with expensive service and spark plugs? Time: 19.858 ms
+Highly rated, high price service events? Time: 16.848 ms
+Low rated, low price service events? Time: 0.878 ms
+How many high mileage cars? Time: 142.728 ms
+
+Process finished with exit code 0
+
+```
+
+**Adding indexes in mongoengine**
+
+By doing this in MongoEngine and pushing our code into production will ensure that the database has all the right indexes
+set up for to operate correctly. This way all the indexes that are required will be there. Anytime we want to do a filter by,
+a greater than, an equality, or we want to do a sort, we need an index. Let's go to the owner class and let's add the ability
+to sort it by name or equivalently also do a filter like find exactly by name.
+
+owner.py
+
+```
+from datetime import datetime
+
+import mongoengine
+
+class Owner(mongoengine.Document):
+    # show off required (not available in mongo or pymongo directly)
+    name = mongoengine.StringField(required=True)
+
+    # show off default
+    created = mongoengine.DateTimeField(default=datetime.now)
+
+    # allows us to use $set and $inc
+    number_of_visits = mongoengine.IntField(default=0)
+
+    # show off many-to-many modeling with one sided list field
+    # cars can have multiple owners and an owner can own multiple cares
+    car_ids = mongoengine.ListField(mongoengine.ObjectIdField()) # list of ids of the cars, which we push here
+
+    meta = {
+        'db_alias': 'core',
+        'collection': 'owners',
+        'indexes': [
+    *       'name', 'car_ids'  
+        ]
+    }
+```

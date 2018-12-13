@@ -21,5 +21,7 @@ class Car(mongoengine.Document):
         'db_alias': 'core',
         'collection': 'cars',
         'indexes': [
+            'service_history.price',
+            'service_history.description'
         ]
     }
