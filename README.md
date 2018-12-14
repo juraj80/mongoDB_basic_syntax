@@ -1871,6 +1871,31 @@ set up for to operate correctly. This way all the indexes that are required will
 a greater than, an equality, or we want to do a sort, we need an index. Let's go to the owner class and let's add the ability
 to sort it by name or equivalently also do a filter like find exactly by name.
 
+
+Query: Find the 10,000th owner by name?
+```
+timed(
+    'Find the 10,000th owner by name?',
+    lambda: Owner.objects().order_by('name')[10000:10001][0]
+)
+```
+Response: 
+
+`Find the 10,000th owner by name? Time: 295.879 ms`
+
+Too long. It's the sorting problem that we are running into.
+
+`db.cars.find({}).sort({'name':1}).explain()`
+
+winningPlan:
+
+` "stage" : "COLLSCAN",`
+
+
+So let's go to the owner class and add the ability to sort it by name, equivalently do a filter like find exactly by name.
+
+
+
 owner.py
 
 ```
@@ -1895,8 +1920,313 @@ class Owner(mongoengine.Document):
     meta = {
         'db_alias': 'core',
         'collection': 'owners',
+    *   'indexes': [
+    *       'name',  
+    *   ]
+    }
+```
+Query: How many cars are owned by the 10,000th owner? Time: 3.615 ms
+
+```
+owner = Owner.objects().order_by('name')[10000:10001][0]
+
+
+def find_cars_by_owner(owner_id):
+    the_owner = Owner.objects(id=owner_id).first()
+    cars = Car.objects().filter(id__in=the_owner.car_ids) #id is in a set
+    return list(cars)
+
+
+timed(
+    'How many cars are owned by the 10,000th owner?',
+    lambda: find_cars_by_owner(owner.id)
+)
+
+```
+We're doing two queries, but both of them are hitting the id thing, so those should both be indexed, because ids are 
+always indexed, that's why 3 milliseconds.
+
+Query: How many owners own the 10,000th car? Time: 68.941 ms
+
+```
+def find_owners_by_car(car_id):
+    owners = Owner.objects(car_ids=car_id)
+    return list(owners)
+
+
+car = Car.objects()[10000:10001][0]
+timed(
+    'How many owners own the 10,000th car?',
+    lambda: find_owners_by_car(car.id)
+)
+```
+in the shell:
+
+`db.owners.find({car_ids: ObjectId('5928f6343ae7407d71754b80')}).explain()
+`
+
+winningPlan:
+
+` "stage" : "COLLSCAN",`
+
+We want to have an index on car ids, so we must add it to the owner class.
+
+```
+ meta = {
+        'db_alias': 'core',
+        'collection': 'owners',
         'indexes': [
-    *       'name', 'car_ids'  
+            'name', 'car_ids'
         ]
     }
 ```
+
+Response:
+
+`How many owners own the 10,000th car? Time: 2.689 ms`
+
+Query: Cars with expensive service? Time: 712.874 ms
+```
+timed(
+    'Cars with expensive service?',
+    lambda: Car.objects(service_history__price__gt=16800).count()
+)
+```
+Here we are looking at the service history and then we're navigating that hierarchy with double underscore, going to the
+price. So let's add indexes to the car class with 'service_history.price' as an index.
+
+car.py
+```
+meta = {
+        'db_alias': 'core',
+        'collection': 'cars',
+        'indexes': [
+            'service_history.price',
+        ]
+    }
+```
+Response: 
+
+`Cars with expensive service? Time: 5.623 ms`
+
+
+Query: Cars with expensive service and spark plugs? Time: 28.307 ms
+```
+timed(
+    'Cars with expensive service and spark plugs?',
+    lambda: Car.objects(service_history__price__gt=16800, service_history__description='Spark plugs').count()
+)
+```
+Response:
+
+`Cars with expensive service and spark plugs? Time: 6.436 ms
+`
+
+in the shell:
+
+`db.cars.find({'service_history.price':{$gt:16800}}, {'service_history.description':'Spark plugs'}).explain()`
+
+winningPlan:
+
+` "stage" : "COLLSCAN",`
+
+We need to add 'service_history.description' to car indexes.
+```
+   meta = {
+        'db_alias': 'core',
+        'collection': 'cars',
+        'indexes': [
+            'service_history.price',
+            'service_history.description'
+        ]
+    }
+```
+
+Response:
+
+`Load cars with expensive service and spark plugs? Time: 1.770 ms
+`
+
+But what would be even better is if we could do the description and the price as a single thing. How can we do that?
+We can actually create a composite index in car indexes like this:
+```
+meta = {
+        'db_alias': 'core',
+        'collection': 'cars',
+        'indexes': [
+            'service_history.price',
+            'service_history.description',
+            {'fields':['service_history.price', 'service_history.description']}
+        ]
+    }
+```
+
+Response:
+
+`Cars with expensive service and spark plugs? Time: 0.676 ms`
+
+We added one index, and then we added the description index, it turns out that was a better index, and finally we added 
+composite index, and we took it to half a millisecond. We did count function, it's basically having the database do all 
+the work, but there's zero serialization.
+    
+Query: Load cars with expensive service and spark plugs? Time: 0.706 ms
+```
+timed(
+    'Load cars with expensive service and spark plugs?',
+    lambda: list(Car.objects(service_history__price__gt=16800, service_history__description='Spark plugs'))
+)
+```
+Here we calling a list, so we are deserializing, we're actually pulling all of those records back. Let's check this query:
+
+`db.cars.find({'service_history.price':{$gt:15000}}).count()`
+
+65264 cars had 15 thousand dollar service or higher, after all this is a Ferrari dealership :)
+It turns out it's a really bad idea to pull back that many cars, so let's limit that to just a thousand cars.
+
+```
+timed(                                                                   
+    'Load cars with expensive service and spark plugs?',                 
+    lambda: list(Car.objects(service_history__price__gt=15000)[:1000])   
+)                                                                        
+                                                                         
+timed(                                                                   
+    'Load car name and ids with expensive service and spark plugs?',     
+    lambda: list(Car.objects(service_history__price__gt=15000)           
+                  .only('make', 'model', 'id')[:1000])                   
+ )   
+```                                                                    
+
+Response:
+```
+Load cars with expensive service and spark plugs? Time: 1,068.853 ms
+Load car name and ids with expensive service and spark plugs? Time: 166.072 ms
+```
+In second query we are using `.only()` function, it says don't pull back the other things, just give me these three fields
+when you create them. It makes it basically ten times faster. It turns out that the deserialization step in MongoEngine is 
+a little bit expensive so if we want a million cars into that list, it's going to take a little bit.
+
+Query: 
+
+Highly rated, high price service events? Time: 16.899 ms
+Low rated, low price service events? Time: 1.061 ms
+
+```
+timed(                                                                                                   
+    'Highly rated, high price service events?',                                                          
+    lambda: Car.objects(service_history__customer_rating=5, service_history__price__gt=16800).count()    
+) 
+
+timed(                                                                                                 
+    'Low rated, low price service events?',                                                            
+    lambda: Car.objects(service_history__customer_rating=1, service_history__price__lt=50).count()     
+)                                                                                                                                                                                                             
+```   
+We don't have customer_rating between indexes, so we add it to the car indexes to speed the query up.
+
+       meta = {
+        'db_alias': 'core',
+        'collection': 'cars',
+        'indexes': [
+            'service_history.price',
+           *'service_history.customer_rating',
+            'service_history.description',
+            {'fields':['service_history.price', 'service_history.description']},
+           *{'fields':['service_history.price', 'service_history.customer_rating']}
+            
+        ]
+    }
+       
+Response:
+
+Highly rated, high price service events? Time: 19.476 ms
+Low rated, low price service events? Time: 0.894 ms
+
+Query: How many high mileage cars? Time: 163.711 ms
+```
+timed(                                                            
+    'How many high mileage cars?',                                
+    lambda: Car.objects(mileage__gt=140000).count()               
+)                                                                 
+```  
+
+We need to add the mileage field between indexes to speed query up. 
+```
+ meta = {
+        'db_alias': 'core',
+        'collection': 'cars',
+        'indexes': [
+           *'mileage',
+            'service_history.price',
+            'service_history.customer_rating',
+            'service_history.description',
+            {'fields':['service_history.price', 'service_history.description']},
+            {'fields':['service_history.price', 'service_history.customer_rating']}
+        ]
+    }                                                            
+```    
+
+Response:
+`
+How many high mileage cars? Time: 5.176 ms
+`
+
+So we can add three types of indexes with MongoEngine:
+- flat indexes (plain fields)
+- nested indexes 
+- composite indexes   
+
+How do we know that we are done with this performance adjustments?
+We know we are done when all of these numbers come by and they're all within reason of what we're willing to take.  
+
+In real application we want to set up profiling
+
+https://docs.mongodb.com/manual/tutorial/manage-the-database-profiler/
+
+`db.setProfilingLevel() 
+`
+It will generate a table called system.profile with small queries.
+We can go there and see what queries are slow, clear it out, run your app, see what shows up in there, add a bunch of
+indexes, make them fast, clear that table, then turn around and run your app again. Or we can find the slowest one, make 
+it faster, clear out the profile and just iterate that process. 
+
+**Concept: Indexes via shell** 
+
+Creating these indexes is even more important in document databases than it is in relational dbs.
+
+![alt text](src/pic49.png)
+
+**Concept: Indexes via mongoengine** 
+
+We don't have to go to the shell and manually type all the indexes, we basically go to each individual top level document,
+so all the things that derive from mongoengine.document, not the embedded documents, and we go to the meta section and we
+add an indexes, basically array.
+
+![alt text](src/pic50.png)
+
+**Concept: Document design for performance** 
+
+One of the most important things we can do for performance in our db and these document dbs is think about our document
+design.
+
+Important questions to consider:
+
+Should we embed stuff, should we not, what embeds where, do we embed just ids, do we embed the whole thing.
+
+![alt text](src/pic51.png)
+
+We should use performance profiling and tuning to figure out where we might use `only()` keyword.
+
+We should also consider what is the right size of document.
+
+`db.getCollection('cars').stats()` - it will return statistics about the document.
+
+The most important info is about average object size, 700 bytes, fine for our db.
+
+![alt text](src/pic52.png)
+
+**Concept: Projections** 
+
+One of the last simple tools we have is the ability to restrict the data returned from the document
+
+![alt text](src/pic53.png)
+
