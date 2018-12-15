@@ -2230,3 +2230,14 @@ One of the last simple tools we have is the ability to restrict the data returne
 
 ![alt text](src/pic53.png)
 
+#Deploying MongoDB in production (and playing it safe)
+
+Problem is that MongoDB listen on the wide open internet without a username and password and without encryption by the 
+default.
+
+![alt text](src/pic54.png)
+
+![alt text](src/pic55.png)
+
+
+
