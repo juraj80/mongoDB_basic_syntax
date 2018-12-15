@@ -2239,5 +2239,14 @@ default.
 
 ![alt text](src/pic55.png)
 
+**Creating couple of web servers**
+
+![alt text](src/pic56.png)
+
+We're going to create two servers, one that's going to be our web server that's going to be our web server and the one that
+is the deployment production server.
+
+
+
 
 
