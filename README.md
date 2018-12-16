@@ -2243,10 +2243,38 @@ default.
 
 ![alt text](src/pic56.png)
 
-We're going to create two servers, one that's going to be our web server that's going to be our web server and the one that
+We're going to create two servers through Digital Ocean, one that's going to be our web server that's going to be our web server and the one that
 is the deployment production server.
 
+https://cloud.digitalocean.com 
 
+
+1.Create a Droplet
+2.Choose a Distribution
+3.Choose size
+4.Choose a datacenter region
+5.Select additional options - monitoring
+6.Add your SSH keys - new SSH key
+7.Choose a hostname - themongoserver
+
+
+
+**Generating SSH keys on Mac OSX**
+
+`man ssh-keygen   
+`
+it will give us all the parameters
+
+`ssh-keygen -t rsa -b 2048
+`
+when we want to upload a public key, we can just copy the text from .pub file
+
+`more publickey.pub
+`
+connect to remote root
+ 
+`ssh -i /path_to_privatekey root@ip_of_remote_server
+`
 
 
 
