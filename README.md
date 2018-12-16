@@ -2254,9 +2254,8 @@ https://cloud.digitalocean.com
 3.Choose size
 4.Choose a datacenter region
 5.Select additional options - monitoring
-6.Add your SSH keys - new SSH key
+6.Add your SSH keys - new or existing SSH key
 7.Choose a hostname - themongoserver
-
 
 
 **Generating SSH keys on Mac OSX**
@@ -2271,10 +2270,23 @@ when we want to upload a public key, we can just copy the text from .pub file
 
 `more publickey.pub
 `
-connect to remote root
+
+connect to remote root:
+`
+ssh root@ip_of_remote_server
+ `
  
 `ssh -i /path_to_privatekey root@ip_of_remote_server
 `
 
+if denied, register your ssh to your user:
 
+`ssh-add -K ~/.ssh/*.key
+`
 
+if connected, check for updates `apt update`
+
+to upgrade server `apt upgrade`
+
+to logout from root type `exit`
+to restart the system type `reboot`
