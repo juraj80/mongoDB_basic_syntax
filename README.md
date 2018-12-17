@@ -2262,16 +2262,16 @@ https://cloud.digitalocean.com
 
 `man ssh-keygen   
 `
-it will give us all the parameters
+It will give us all the parameters
 
 `ssh-keygen -t rsa -b 2048
 `
-when we want to upload a public key, we can just copy the text from .pub file
+When we want to upload a public key, we can just copy the text from .pub file
 
 `more publickey.pub
 `
 
-connect to remote root:
+Try connection to the remote root:
 `
 ssh root@ip_of_remote_server
  `
@@ -2279,14 +2279,32 @@ ssh root@ip_of_remote_server
 `ssh -i /path_to_privatekey root@ip_of_remote_server
 `
 
-if denied, register your ssh to your user:
+If denied, register your ssh to your user:
 
 `ssh-add -K ~/.ssh/*.key
 `
 
-if connected, check for updates `apt update`
+If connected, _check for updates_ `apt update`
 
-to upgrade server `apt upgrade`
+To _upgrade_ server `apt upgrade`
 
-to logout from root type `exit`
-to restart the system type `reboot`
+To _logout_ from root type `exit`
+To _restart_ the system type `reboot`
+
+
+With same steps create second cloud server for the fake web app with the name: thewebserver
+
+Try connection to the remote root:
+`
+ssh root@ip_of_remote_server
+`
+
+**Install MongoDB for production use**
+
+MongoDB has the service called MongoDB Atlas, which is database as a service, where you have to create a AWS account,
+EC2 account, you give them access to make machines and manage those machines on your behalf and they can create a replica
+sets and other stuff. This is a service that manages your EC2 machines upon your behalf.
+
+Other option is mLab free Sandbox or Shared one for light production work, so you can go and just get MongoDB as a service.
+
+But we want to know how to create our onw MongoDB servers.
