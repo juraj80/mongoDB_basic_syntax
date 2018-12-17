@@ -2308,3 +2308,19 @@ sets and other stuff. This is a service that manages your EC2 machines upon your
 Other option is mLab free Sandbox or Shared one for light production work, so you can go and just get MongoDB as a service.
 
 But we want to know how to create our onw MongoDB servers.
+
+If we try to connect directly to the themongoserver without knowing IP we get:
+
+`MacBook-Pro-xxx:.ssh xxx$ ssh root@thewebserver
+ssh: Could not resolve hostname thewebserver: nodename nor servname provided, or not known
+`
+Let's associate the IP of the remote servers with its domain name save both to the /etc/hosts file.
+
+`sudo nano /etc/hosts`
+
+```
+165.227.175.56 thewebserver
+138.68.104.69 themongoserver
+```
+
+Now we can try connect with `root@themongoserver` or `root@thewebserver`
