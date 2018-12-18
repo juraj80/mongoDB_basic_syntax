@@ -2323,4 +2323,144 @@ Let's associate the IP of the remote servers with its domain name save both to t
 138.68.104.69 themongoserver
 ```
 
-Now we can try connect with `root@themongoserver` or `root@thewebserver`
+Now we can try connect with `root@themongoserver` or `root@thewebserver`.
+
+Connect to the themongoserver and install MongoDB according the following steps: 
+
+https://docs.mongodb.com/manual/tutorial/install-mongodb-on-ubuntu/
+
+1. Import the public key used by the package management system.
+
+`sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv 9DA31620334BD75D9DCB49F368818C72E52529D4
+`
+
+2. Create a list file for MongoDB for the proper version of Ubuntu (16.04 in our case).
+
+`echo "deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu xenial/mongodb-org/4.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-4.0.list
+`
+
+3. Reload local package database
+
+`
+sudo apt-get update
+`
+
+4. Install the latest stable version of MongoDB.
+
+`apt install mongodb-org`
+
+The MongoDB is now installed on our cloud server and next time we run apt update and then upgrade that could potentially 
+install next version of mongo.
+
+To run the MongoDB service:
+
+`service mongod start
+`
+
+We can ask status:
+
+`service mongod status
+` 
+
+To connect to MongoDB:
+
+`mongo`
+
+
+**Concept: Installing MongoDB for production**
+
+![alt text](src/pic57.png)
+
+
+**Limit your network exposure**
+
+One of the most important things we can do to make our MongoDB server safe, even if we screw up the configuration, the 
+authentication, the encryption, is to make sure nobody can talk to it. So we're going to do two simple things right away
+to lock down our server. Obviously our web app should be able to talk to it and it's this probably within a data center we 
+could possibly get to it from our local machines, but we will do things like ssl tunnels and so on to do that, so we won't
+open up any extra ports for this. However, there's always something out there lurking, things that would love to talk to 
+server on port 27017, the default port, or maybe 1.8 or 1.9, or 20, depending on the service you're running. So we want to 
+block those requests with the firewall and couple of other things.
+
+![alt text](src/pic58.png)
+
+On your webserver install mongodb shell:
+
+`root@thewebserver:~# apt install mongodb-org-shell
+`
+On your mongoserver:
+
+`root@themongoserver:~# more/etc/mongod.conf
+`
+your mongoserver is listening only on local host, so before changing it, first we would like to make it safe, we don't
+want to just listen on the open internet right away, so let's first block access to all of the ports and everything
+basically except for initially ssh, so what we're going to use is something built into Ubuntu called uncomplicated 
+firewall. 
+
+First block all the ports:
+
+`root@themongoserver:~# ufw default deny incoming
+`
+Then allow our server to get back out:
+
+`root@themongoserver:~# ufw default allow outgoing
+`
+Allow ssh back to this server:
+
+`root@themongoserver:~# ufw allow ssh
+`
+
+Ask for status
+
+`root@themongoserver:~# ufw status
+`
+
+Enable the default firewall:
+
+`root@themongoserver:~# ufw enable
+`
+
+So now nothing can talk to any port except for 22 ssh at all on this server. The one final thing to do is to ping the
+web server.
+
+
+`root@themongoserver:~# ping thewebserver
+`
+
+The next we want is to allow the web server to get to the Mongo server.
+
+`root@themongoserver:~# utf allow from ip_of_thewebserver to any port 10001
+`
+
+The port 27017 is the default port and running MongoDB on the default port is probably a stupid idea. Everyone is scanning
+the wide open internet for 27017. So even though we think our firewalls are blocking the wide open internet for everything
+except for ssh, let's go ahead and change the port. So we're going to say 100001 is the port we're going to run Mongo.
+
+So our server is running and listening on that port. 
+
+Next thing to do is to change the port in config file:
+
+`root@themongoserver:~# nano /etc/mongod.conf
+`
+```
+# network interfaces
+net:
+  port: 10001
+  bindIp: 127.0.0.1
+  ```
+ 
+Now restart the MongoDb service:
+
+`root@themongoserver:~# service mongod restart
+`
+
+Connect to mongo on new port:
+
+`root@themongoserver:~# mongo --port 10001
+`
+
+But it's still not going to listen to us on webserver:
+
+`root@thewebserver:~# mongo --host ip_of_themongoserver
+`
+FAILED TO CONNECT
