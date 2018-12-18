@@ -2463,4 +2463,24 @@ But it's still not going to listen to us on webserver:
 
 `root@thewebserver:~# mongo --host ip_of_themongoserver
 `
-FAILED TO CONNECT
+`exception: connect failed
+`
+
+The reason is that on the webserver we are still not listening on the public internet, we're just listening on local host.
+So let's change it.
+
+```
+root@thewebserver:~# ufw default deny incoming
+root@thewebserver:~# utf default allow outgoing
+root@thewebserver:~# utf allow ssh
+root@thewebserver:~# utf allow 80
+root@thewebserver:~# utf allow 443
+root@thewebserver:~# utf enable
+```
+
+So now we've got the webserver sort of foul lock down just to play along and can talk to the mongo server, but mongoserver
+is still not listening. We don't want to make it listen, until we go through a few other steps - encryption of the connection,
+which within the same data center maybe doesn't matter, but we're going to add it anyway and authentication.
+
+![alt text](src/pic59.png)
+
