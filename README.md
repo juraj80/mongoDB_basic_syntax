@@ -2576,3 +2576,52 @@ safe.
 ![alt text](src/pic60.png)
 
 This was an important step to enabling ssl and secure communication on our MongoDB server.
+
+
+**Adding authentication to MongoDB**
+
+So we've encrypted our MongoDB, we've got it hidden behind a firewall and listening on a non standard port, let's add an
+authentication.
+
+`root@themongoserver:/etc/ssl# mongo --port 10001 --sslAllowInvalidCertificates --ssl`
+
+Notice there is no username or password required to get into the db.
+First thing to do is we're going to run this db.create user command. We want to create a user to admin entire database server.
+
+> use admin
+switched to db admin
+> db
+admin
+> show collections
+system.version
+
+Now we can run this db command to create users against admin which means kind of global.
+
+_db.createUser( { user: "the_db_admin", pwd: "the-pw", roles: ["userAdminAnyDatabase", "readWriteAnyDatabase", "dbAdminAnyDatabase", "clusterAdmin"] } )_
+
+To create strong password for db_admin lets use ptpython:
+
+```
+MacBook-Pro-xxx:~ xxx$ pip install ptpython
+MacBook-Pro-xxx:~ xxx$ ptpython
+
+>>> import uuid                                                                                                                                                    
+
+>>> print("the-password-{}".format(uuid.uuid4()))                                                                                                                  
+the-password-16de3b03-8504-44f9-9505-af1dc70436c4
+```
+
+So now we have user: "the_db_admin", pwd: the-password-..., we have to specify the roles,
+we could create multiple users, that have certain restricted access to different databases, but for this case we're just 
+going to say this user the_db_admin can admin, readWrite databases or clusters. Just because you are an admin for a db, 
+does not mean you can read and write to it, you could just create users and things like that, so you need them all.
+
+`db.createUser( { user: "the_db_admin", pwd: "the-password-16de3b03-8504-44f9-9505-af1dc70436c4", roles: ["userAdminAnyDatabase", "readWriteAnyDatabase", "dbAdminAnyDatabase", "clusterAdmin"] } )_
+`
+
+Next we go to the mongo config file and add security information.
+
+security:
+  authorization: enabled
+
+
