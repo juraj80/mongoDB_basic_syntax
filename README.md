@@ -2588,12 +2588,14 @@ authentication.
 Notice there is no username or password required to get into the db.
 First thing to do is we're going to run this db.create user command. We want to create a user to admin entire database server.
 
+```
 > use admin
 switched to db admin
 > db
 admin
 > show collections
 system.version
+```
 
 Now we can run this db command to create users against admin which means kind of global.
 
@@ -2616,12 +2618,60 @@ we could create multiple users, that have certain restricted access to different
 going to say this user the_db_admin can admin, readWrite databases or clusters. Just because you are an admin for a db, 
 does not mean you can read and write to it, you could just create users and things like that, so you need them all.
 
-`db.createUser( { user: "the_db_admin", pwd: "the-password-16de3b03-8504-44f9-9505-af1dc70436c4", roles: ["userAdminAnyDatabase", "readWriteAnyDatabase", "dbAdminAnyDatabase", "clusterAdmin"] } )_
+`> db.createUser( { user: "the_db_admin", pwd: "the-password-16de3b03-8504-44f9-9505-af1dc70436c4", roles: ["userAdminAnyDatabase", "readWriteAnyDatabase", "dbAdminAnyDatabase", "clusterAdmin"] } )
 `
 
-Next we go to the mongo config file and add security information.
+Next we go to the mongo config file and add a security information.
 
+`root@themongoserver:/etc/ssl# nano /etc/mongod.conf
+`
+```
 security:
   authorization: enabled
 
+```
 
+Save and restart the mongo service and check status:
+
+```
+root@themongoserver:/etc/ssl# service mongod restart
+
+root@themongoserver:/etc/ssl# service mongod status
+
+```
+
+If we try to connect to MongoDB, now it will connect:
+
+`root@themongoserver:/etc/ssl# mongo --port 10001 --sslAllowInvalidCertificates --ssl`
+
+but it will not allow you to see the dbs. You have to use your admin name and password:
+```
+> show dbs
+2018-12-19T18:55:05.325+0000 E QUERY    [js] Error: listDatabases failed:{
+	"ok" : 0,
+	"errmsg" : "command listDatabases requires authentication",
+	"code" : 13,
+	"codeName" : "Unauthorized"
+}
+
+> use admin
+switched to db admin
+> db.auth({user: "the_db_admin", pwd: "the-password-16de3b03-8504-44f9-9505-af1dc70436c4" })
+1
+> show dbs
+admin   0.000GB
+config  0.000GB
+local   0.000GB
+```
+
+But we would probably want to do it this way:
+
+`root@themongoserver:~# mongo --port 10001 --sslAllowInvalidCertificates --ssl -u the_db_admin 
+-p the-password-16de3b03-8504-44f9-9505-af1dc70436c4 --authenticationDatabase admin
+`
+```
+> show dbs
+admin   0.000GB
+config  0.000GB
+local   0.000GB
+```
