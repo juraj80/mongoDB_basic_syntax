@@ -2717,3 +2717,7 @@ pip3 install glances
 
 glances
 ```
+
+![alt text](src/pic62.png)
+
+
