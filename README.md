@@ -2766,5 +2766,17 @@ def config_mongo():
         10001,
         '165.227.175.56'
         )
-```    
-        
+```  
+
+Push your deployment files to the git and then clone them on your webserver.
+Create and activate virtual env for your python packages
+Install mongoengine package
+Run the script with your app.
+
+``` 
+root@thewebserver:~/service-deploy# apt-get install python3-venv
+root@thewebserver:~# python3 -m venv ~/sample_env
+root@thewebserver:~# source ~/sample_env/bin/activate
+(sample_env) root@thewebserver:~# pip install mongoengine
+(sample_env) root@thewebserver:~# python3 ./service-deploy/service_app.py
+```        
