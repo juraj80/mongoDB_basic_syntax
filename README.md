@@ -2721,3 +2721,50 @@ glances
 ![alt text](src/pic62.png)
 
 
+**Connecting to MongoDB via Python**
+
+```
+import mongoengine
+
+
+* def global_init(user=None, password=None, port=27017, server='localhost', use_ssl=True):
+*    if user or password:
+*        pass
+*    else:
+*        print("--> Registering dev connection")
+        mongoengine.register_connection(alias='core', name='demo_dealership')
+```
+```
+import ssl
+import mongoengine
+
+
+def global_init(user=None, password=None, port=27017, server='localhost', use_ssl=True):
+    if user or password:
+        data = dict(
+            username=user,
+            password=password,
+            host=server,
+            port=port,
+            authentication_source='admin',
+            authentication_mechanism='SRAM-SHA-1',
+            ssl=use_ssl,
+            ssl_cert_regs=ssl.CERT_NONE) # ignore a self sign certificate
+        mongoengine.register_connection(alias='core', name='demo_dealership', **data)
+        data['password'] = '************'
+        print("--> Registering prod connection: {}".format(data))
+    else:
+        print("--> Registering dev connection")
+        mongoengine.register_connection(alias='core', name='demo_dealership')
+```
+    
+```
+def config_mongo():
+    mongo_setup.global_init(
+        'the_db_admin',
+        'the-password-16de3b03-8504-44f9-9505-af1dc70436c4',
+        10001,
+        '165.227.175.56'
+        )
+```    
+        
