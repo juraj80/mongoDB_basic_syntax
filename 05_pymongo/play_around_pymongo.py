@@ -25,7 +25,7 @@ else:
 # book = db.books.find_one({'isbn': '73738947384'})
 # print(book)
 
-'''An atomic, in place update'''
+''' An atomic, in place update '''
 
 db.books.update({'isbn': '73738947385'}, {'$addToSet': {'favorited_by': 101} } ) # addToSet Mongo operator in Python with quotes
 book = db.books.find_one({'isbn': '73738947385'})
