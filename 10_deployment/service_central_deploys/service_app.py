@@ -31,9 +31,9 @@ def print_header():
 def config_mongo():
     mongo_setup.global_init(
         'the_db_admin',
-        'the-password-3809b81f-ba37-403d-8013-a1ebaf13cf94',
+        'the-password-16de3b03-8504-44f9-9505-af1dc70436c4',
         10001,
-        '107.170.211.24'
+        '138.68.104.69'
     )
 
 
