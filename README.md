@@ -2664,14 +2664,56 @@ config  0.000GB
 local   0.000GB
 ```
 
-But we would probably want to do it this way:
+But we would probably want to do it shorter way:
 
-`root@themongoserver:~# mongo --port 10001 --sslAllowInvalidCertificates --ssl -u the_db_admin 
--p the-password-16de3b03-8504-44f9-9505-af1dc70436c4 --authenticationDatabase admin
+`root@themongoserver:~# mongo --port 10001 --sslAllowInvalidCertificates --ssl -u the_db_admin -p the-password-16de3b03-8504-44f9-9505-af1dc70436c4 --authenticationDatabase admin
 `
 ```
 > show dbs
 admin   0.000GB
 config  0.000GB
 local   0.000GB
+```
+
+**Concept: Adding authentication to MongoDB**
+
+![alt text](src/pic61.png)
+
+At this point, we have set up our MongoDB in a safe way, check the config file if your network is properly set. The final thing that we might consider and it depends on how you
+want to run your database, you might set up a replica set to have failover and multi machine redundancy. That's certainly
+a next step you could take, so check out the docs.
+
+
+**The BIG moment**
+
+1.Connect to the webserver:
+
+`ssh root@thewebserver
+`
+
+2. From the webserver connect to the mongo server using the mongo server IP and admin username and password.
+
+`root@thewebserver:~# mongo --port 10001 --host 138.68.104.69 --sslAllowInvalidCertificates --ssl -u the_db_admin -p the-password-16de3b03-8504-44f9-9505-af1dc70436c4 --authenticationDatabase admin`
+
+Notes:
+
+Only thewebserver could connect to themongoserver, other request will time out.
+We have to pass the username and the password (in the auth string) if not we can still connect to the server but nothing will work
+
+Let's do one more thing, let's install the glances app on themongoserver.
+
+`root@themongoserver:~# apt install glances
+`
+
+It's a really cool way to look at our server, we can see how much memory and CPU is our db using. Type m for sorting by memory,
+type c for CPU.
+
+Note: if you install pip3 and then glances via pip3 you get a much nicer version of glances
+
+```
+sudo apt-get -y install python3-pip
+
+pip3 install glances
+
+glances
 ```
