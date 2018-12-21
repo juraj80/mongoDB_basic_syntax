@@ -2740,7 +2740,7 @@ import mongoengine
         mongoengine.register_connection(alias='core', name='demo_dealership')
 ```
 
-We're going to create a dictionary where we set all of its keys to the global_init arguments.
+We're going to create a dictionary, where we set all of its keys to the global_init keyword arguments. 
 
 ```
 import ssl
@@ -2765,7 +2765,10 @@ def global_init(user=None, password=None, port=27017, server='localhost', use_ss
         print("--> Registering dev connection")
         mongoengine.register_connection(alias='core', name='demo_dealership')
 ```
-    
+The next thing we need to go our service app where we calling the global_init function and pass all the details required 
+for the connection.
+
+service_app.py
 ```
 def config_mongo():
     mongo_setup.global_init(
@@ -2775,11 +2778,13 @@ def config_mongo():
         '165.227.175.56'
         )
 ```  
+Now if we run this, it will probably going to timeout. We already saw we can't connect to the server. So we need to push
+this up to the git repository.
 
-Push your deployment files to the git and then clone them on your webserver.
-Create and activate virtual env for your python packages
-Install mongoengine package
-Run the script with your app.
+1. First push your deployment files to the git and then clone them on your webserver.
+2. Create and activate virtual env for your python packages
+3. Install mongoengine package
+4. Run the script with your app.
 
 ``` 
 root@thewebserver:~/service-deploy# apt-get install python3-venv
