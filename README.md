@@ -2723,9 +2723,14 @@ glances
 
 **Connecting to MongoDB via Python**
 
+Let's go back to our service_app template file and set the global_init function up for running it in our production environment.
+If we would put the template on our web server, it would talk to local host and have a big fail. So instead we need to go and
+add some default parameters to our mongo connection in mongo_setup.py.
+
+nosql/mongo_setup.py
+
 ```
 import mongoengine
-
 
 * def global_init(user=None, password=None, port=27017, server='localhost', use_ssl=True):
 *    if user or password:
@@ -2734,6 +2739,9 @@ import mongoengine
 *        print("--> Registering dev connection")
         mongoengine.register_connection(alias='core', name='demo_dealership')
 ```
+
+We're going to create a dictionary where we set all of its keys to the global_init arguments.
+
 ```
 import ssl
 import mongoengine
