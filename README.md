@@ -2778,13 +2778,13 @@ def config_mongo():
         '165.227.175.56'
         )
 ```  
-Now if we run this, it will probably going to timeout. We already saw we can't connect to the server. So we need to push
-this up to the git repository.
+Now if we run this, it will probably going to timeout. We already saw we can't connect to the server, so we need to push
+this up to the git repository and clone it to the webserver.
 
 1. First push your deployment files to the git and then clone them on your webserver.
-2. Create and activate virtual env for your python packages
+2. Then create and activate virtual env on the webservet in order to pip install of mongoengine package.
 3. Install mongoengine package
-4. Run the script with your app.
+4. Finally run the service_app.py file within your env
 
 ``` 
 root@thewebserver:~/service-deploy# apt-get install python3-venv
@@ -2792,4 +2792,40 @@ root@thewebserver:~# python3 -m venv ~/sample_env
 root@thewebserver:~# source ~/sample_env/bin/activate
 (sample_env) root@thewebserver:~# pip install mongoengine
 (sample_env) root@thewebserver:~# python3 ./service-deploy/service_app.py
-```        
+```  
+      
+_Note: Useful basic shell commands_
+
+To make a directory
+
+`mkdir ~/mydir
+`
+
+To remove a directory that contains other files or directories with a prompt for approval to delete each of the files.
+
+`rm -r mydir
+`
+
+If we don't want to receive a prompt for each file.
+
+`rm -rf mydir
+`
+
+To copy (-r copy recursively) a directory to a new location:
+
+`cp -r /path/to/directory /path/to/location/new-name
+`
+
+**Concept: Connecting to MongoDB via Python**
+
+Let's review how we connected to the mongo on our local machine:
+
+![alt text](src/pic63.png)
+
+
+
+For connection to a real web server, we are going to use a more advanced version:
+
+![alt text](src/pic64.png)
+
+
