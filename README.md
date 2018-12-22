@@ -2834,10 +2834,11 @@ It's great that we have our MongoDB running in production. We've got our web ser
 entirely locked down. If we tried to connect to that Mongo server, even though it's on a different port with ssl and 
 authentication, we couldn't talk to it because the Ubuntu firewall was blocking access from everywhere in the world
 except for that one fake web server. So we can't talk to it, we can't manage it with Robomongo, which would be great, but
-we can't even connect to it via the shell, can we? We tried that and it failed. 
+we can't even connect to it via the shell. We tried that and it failed. 
 
-But we can ssh into the Mongo server with `ssh root@themongoserver` and switch to db admin but that's it, nothing more we 
-can do. It turns out we can set up an ssh tunnel using that mechanism. If we run this command ( -f to run in the background,
+But we can ssh into the Mongo server with `ssh root@themongoserver` and switch to db admin but that's it, nothing more. 
+
+It turns out we can set up an ssh tunnel using that mechanism. If we run this command ( -f to run in the background,
 ssh to the root@themongoserver, -L map the local port 10001 on the remote machine called the localhost 10001) it creates 
 a background task of ssh tunneling one port locally over that server port.
 
@@ -2853,9 +2854,11 @@ Notice there's no host there, we have the port 10001, what is the host if we don
 
 ```
 > db.serverStatus()
-
+{
+	"host" : "themongoserver:10001",
+	"version" : "4.0.4",
+	"process" : "mongod",
 ...
-
 ```
 
 We can even connect with the Robomongo:
@@ -2871,6 +2874,23 @@ Now when we've connected with Robomongo we can for example add an index for serv
 ![alt text](src/pic70.png)
 ![alt text](src/pic71.png)
 
+Last thing we will see, is how to do a backup of a database using the mongodump function.
+
+Let's go to our desktop and make a dir called the backtest where we mongodump our db.
+
+```
+MacBook-Pro-xxx:~ xxx$ cd Desktop
+MacBook-Pro-xxx:Desktop xxx$ mkdir backtest
+MacBook-Pro-xxx:Desktop xxx$ cd backtest
+MacBook-Pro-xxx:backtest xxx$ mongodump --help
+MacBook-Pro-xxx:backtest xxx$ mongodump --port 10001 --sslAllowInvalidCertificates --ssl -u the_db_admin -p the-password-16de3b03-8504-44f9-9505-af1dc70436c4 --authenticationDatabase admin --db demo_dealership -o ./
+2018-12-22T20:28:30.155+0100	writing demo_dealership.cars to 
+2018-12-22T20:28:30.433+0100	done dumping demo_dealership.cars (2 documents)
+```
+
+We're going to use Mongodump with all the settings, we're going to go to demo_dealership and the output is going to be into
+the working folder which is this Desktop. Because we're tunneled into the production machine we can go and grab that data from 
+there and back it up locally.
 
 
 
