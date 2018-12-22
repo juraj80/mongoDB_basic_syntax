@@ -2823,9 +2823,55 @@ Let's review how we connected to the mongo on our local machine:
 ![alt text](src/pic63.png)
 
 
-
 For connection to a real web server, we are going to use a more advanced version:
 
 ![alt text](src/pic64.png)
+
+
+**MongoDB admin tools**
+
+It's great that we have our MongoDB running in production. We've got our web server and a MongoDB server and they're 
+entirely locked down. If we tried to connect to that Mongo server, even though it's on a different port with ssl and 
+authentication, we couldn't talk to it because the Ubuntu firewall was blocking access from everywhere in the world
+except for that one fake web server. So we can't talk to it, we can't manage it with Robomongo, which would be great, but
+we can't even connect to it via the shell, can we? We tried that and it failed. 
+
+But we can ssh into the Mongo server with `ssh root@themongoserver` and switch to db admin but that's it, nothing more we 
+can do. It turns out we can set up an ssh tunnel using that mechanism. If we run this command ( -f to run in the background,
+ssh to the root@themongoserver, -L map the local port 10001 on the remote machine called the localhost 10001) it creates 
+a background task of ssh tunneling one port locally over that server port.
+
+`ssh -f root@themongoserver -L 10001:localhost:10001 -N
+`
+
+Now if we try this, we will have access to the db.
+
+`mongo --port 10001 --sslAllowInvalidCertificates --ssl -u the_db_admin -p the-password-16de3b03-8504-44f9-9505-af1dc70436c4 --authenticationDatabase admin
+`
+Notice there's no host there, we have the port 10001, what is the host if we don't specify one - local host, but local host
+10001 really means the Mongo server 10001.
+
+```
+> db.serverStatus()
+
+...
+
+```
+
+We can even connect with the Robomongo:
+
+![alt text](src/pic65.png)
+![alt text](src/pic66.png)
+![alt text](src/pic67.png)
+![alt text](src/pic68.png)
+
+Now when we've connected with Robomongo we can for example add an index for service_history.price.
+
+![alt text](src/pic69.png)
+![alt text](src/pic70.png)
+![alt text](src/pic71.png)
+
+
+
 
 
