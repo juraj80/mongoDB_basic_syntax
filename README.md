@@ -2895,6 +2895,22 @@ We're going to use Mongodump with all the settings, we're going to go to demo_de
 the working folder which is this Desktop. Because we're tunneled into the production machine we can go and grab that data from 
 there and back it up locally.
 
+**Concept: MongoDB admin tools**
+
+We can use our ssh as a tunnel to give us access to our production MongoDB server. 
+
+![alt text](src/pic72.png)
 
 
+
+The other thing we can do is connect with the Mongo shell an use mongodump to back up a database.
+
+![alt text](src/pic73.png)
+
+
+Finally we have it, we have our production MongoDB server up and running, we installed it through aptitude which means if 
+there is an update, security or otherwise, it will automatically apt upgrade, take care of it for us. We've got over the
+wire encryption, we've got non default ports, we've got authentication, and we saw how we can use ssh to use our local dev 
+machine, we sah how we can use ssh tunnels and our local db management tools, Robomongo, the Mongo shell to get back into 
+the production server and manage it without punching holes in the firewall for that purpose.
 
