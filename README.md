@@ -1,3 +1,6 @@
+#MongoDB with Python
+
+
 **Installing MongoDB on macOS**
 
 1. install homebrew at brew.sh
@@ -760,7 +763,7 @@ def add_car():
 ```
 
 The next thing we want to look at is the engine and the embedded elements. The engine will equal to a subclass, a class that
-represents engines. We define a class Engine in separata file, which will derive from mongoengine as a embedded subdocument.
+represents engines. We define a class Engine in separate file, which will derive from mongoengine as a embedded subdocument.
 We will not query and save them independently, we can only work with them through their parent document. 
 
 nosql/engine.py
