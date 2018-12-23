@@ -2914,3 +2914,63 @@ wire encryption, we've got non default ports, we've got authentication, and we s
 machine, we sah how we can use ssh tunnels and our local db management tools, Robomongo, the Mongo shell to get back into 
 the production server and manage it without punching holes in the firewall for that purpose.
 
+You now know enough to build production ready applications based on MongoDB.
+
+#Lightning review
+
+**What is NoSQL?**
+
+![alt text](src/pic74.png)   
+![alt text](src/pic75.png)
+
+**Shell query syntax**   
+
+![alt text](src/pic76.png)
+
+![alt text](src/pic77.png)
+
+**pymongo**
+
+The lowest level way to talk to MongoDB from Python is with PyMongo. 
+
+![alt text](src/pic78.png)
+
+![alt text](src/pic79.png)
+
+
+**Document design**
+
+Some of the concepts and ideas of relational databases still apply here, but many of the techniques fall down, this whole
+concept of third normal form doesn't make nearly as much sense as it does in a relational database.
+
+![alt text](src/pic80.png)
+
+**mongoengine**
+
+After we talked about the raw access from PyMongo, we said let's take this up a level of abstraction, let's actually build
+classes and map those over ORM style into MongoDB.
+
+
+![alt text](src/pic81.png)
+
+![alt text](src/pic82.png)
+
+![alt text](src/pic83.png)
+
+**Performance tuning MongoDB**
+
+![alt text](src/pic84.png)
+
+![alt text](src/pic85.png)
+
+**Deployments**
+
+![alt text](src/pic86.png)
+
+
+
+
+
+
+
+
