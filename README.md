@@ -2902,7 +2902,6 @@ We can use our ssh as a tunnel to give us access to our production MongoDB serve
 ![alt text](src/pic72.png)
 
 
-
 The other thing we can do is connect with the Mongo shell an use mongodump to back up a database.
 
 ![alt text](src/pic73.png)
